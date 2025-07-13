@@ -8,14 +8,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { products, categories } from "@/data/products";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const Products = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [sortBy, setSortBy] = useState("featured");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [searchResults, setSearchResults] = useState<typeof products | null>(null);
+  
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
-  const filteredProducts = products.filter(product => {
+  const productsToShow = searchResults || products;
+
+  const filteredProducts = productsToShow.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          product.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === "All" || product.category === selectedCategory;
@@ -37,15 +49,57 @@ const Products = () => {
     }
   });
 
+  const handleAddToCart = (product: typeof products[0]) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to add items to your cart.",
+        variant: "destructive"
+      });
+      return;
+    }
+    addToCart(product.id, product.name, product.price, product.image);
+  };
+
+  const handleWishlistToggle = (product: typeof products[0]) => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to save items to your wishlist.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist(product.id, product.name, product.price, product.image);
+    }
+  };
+
+  const handleSearchResults = (results: typeof products) => {
+    setSearchResults(results);
+  };
+
+  const handleClearSearch = () => {
+    setSearchResults(null);
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <Header onSearchResults={handleSearchResults} onClearSearch={handleClearSearch} />
       
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl lg:text-4xl font-bold mb-4">Our Products</h1>
           <p className="text-xl text-muted-foreground">Discover our complete range of premium outdoor gear</p>
+          {searchResults && (
+            <p className="text-sm text-muted-foreground mt-2">
+              Showing {sortedProducts.length} search results
+            </p>
+          )}
         </div>
 
         {/* Filters and Search */}
@@ -141,8 +195,17 @@ const Products = () => {
                     </Badge>
                   )}
                   <div className="absolute top-2 right-2 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="icon" variant="secondary" className="bg-white/90 hover:bg-white">
-                      <Heart className="h-4 w-4" />
+                    <Button 
+                      size="icon" 
+                      variant="secondary" 
+                      className="bg-white/90 hover:bg-white"
+                      onClick={() => handleWishlistToggle(product)}
+                    >
+                      <Heart 
+                        className={`h-4 w-4 ${
+                          isInWishlist(product.id) ? 'fill-red-500 text-red-500' : ''
+                        }`} 
+                      />
                     </Button>
                   </div>
                 </div>
@@ -176,6 +239,7 @@ const Products = () => {
                   <Button 
                     className="w-full bg-brand-dark hover:bg-brand-accent text-white"
                     disabled={!product.inStock}
+                    onClick={() => handleAddToCart(product)}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart

@@ -8,12 +8,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getProductById, products } from "@/data/products";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const product = getProductById(id || "");
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  
+  const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { user } = useAuth();
+  const { toast } = useToast();
 
   if (!product) {
     return (
@@ -27,6 +36,35 @@ const ProductDetail = () => {
       </div>
     );
   }
+
+  const handleAddToCart = () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to add items to your cart.",
+        variant: "destructive"
+      });
+      return;
+    }
+    addToCart(product.id, product.name, product.price, product.image);
+  };
+
+  const handleWishlistToggle = () => {
+    if (!user) {
+      toast({
+        title: "Login Required",
+        description: "Please log in to save items to your wishlist.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id);
+    } else {
+      addToWishlist(product.id, product.name, product.price, product.image);
+    }
+  };
 
   const relatedProducts = products.filter(p => 
     p.category === product.category && p.id !== product.id
@@ -138,13 +176,18 @@ const ProductDetail = () => {
                   size="lg" 
                   className="flex-1 bg-brand-dark hover:bg-brand-accent text-white"
                   disabled={!product.inStock}
+                  onClick={handleAddToCart}
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
                   Add to Cart
                 </Button>
-                <Button variant="outline" size="lg">
-                  <Heart className="mr-2 h-5 w-5" />
-                  Wishlist
+                <Button variant="outline" size="lg" onClick={handleWishlistToggle}>
+                  <Heart 
+                    className={`mr-2 h-5 w-5 ${
+                      isInWishlist(product.id) ? 'fill-red-500 text-red-500' : ''
+                    }`} 
+                  />
+                  {isInWishlist(product.id) ? 'Remove' : 'Wishlist'}
                 </Button>
                 <Button variant="outline" size="lg">
                   <Share2 className="h-5 w-5" />

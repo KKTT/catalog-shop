@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -17,15 +20,62 @@ const Auth = () => {
     password: "", 
     confirmPassword: "" 
   });
+  
+  const { user, loading } = useAuth();
 
-  const handleLogin = (e: React.FormEvent) => {
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (user) {
+    return <Navigate to="/" replace />;
+  }
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login:", loginData);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
+      
+      if (error) throw error;
+      
+      // Redirect will happen automatically via auth state change
+      window.location.href = '/';
+    } catch (error: any) {
+      console.error('Login error:', error.message);
+      alert('Login failed: ' + error.message);
+    }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Register:", registerData);
+    
+    if (registerData.password !== registerData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+    
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: registerData.email,
+        password: registerData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            full_name: registerData.name,
+          }
+        }
+      });
+      
+      if (error) throw error;
+      
+      alert('Registration successful! Please check your email to confirm your account.');
+    } catch (error: any) {
+      console.error('Registration error:', error.message);
+      alert('Registration failed: ' + error.message);
+    }
   };
 
   return (
