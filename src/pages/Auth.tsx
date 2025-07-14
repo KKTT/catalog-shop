@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [activeTab, setActiveTab] = useState('login');
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({ 
     name: "", 
@@ -71,7 +72,10 @@ const Auth = () => {
       
       if (error) throw error;
       
-      alert('Registration successful! Please check your email to confirm your account.');
+      alert('Registration successful! Please check your email to confirm your account, then return to login.');
+      // Clear form and switch to login tab
+      setRegisterData({ name: "", email: "", password: "", confirmPassword: "" });
+      setActiveTab('login');
     } catch (error: any) {
       console.error('Registration error:', error.message);
       alert('Registration failed: ' + error.message);
@@ -84,7 +88,7 @@ const Auth = () => {
       
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
               <TabsTrigger value="register">Register</TabsTrigger>

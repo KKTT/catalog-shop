@@ -7,10 +7,31 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getFeaturedProducts, getNewProducts } from "@/data/products";
+import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Index = () => {
   const [featuredProducts] = useState(getFeaturedProducts());
   const [newProducts] = useState(getNewProducts());
+  const { addToCart } = useCart();
+  const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
+  const { user } = useAuth();
+
+  const handleAddToCart = async (product: any) => {
+    const success = await addToCart(product.id, product.name, product.price, product.image);
+    // No need for additional feedback - the cart hook handles this
+  };
+
+  const handleWishlistToggle = async (product: any) => {
+    const isInWishlist = wishlistItems.some(item => item.product_id === product.id);
+    if (isInWishlist) {
+      const item = wishlistItems.find(item => item.product_id === product.id);
+      if (item) await removeFromWishlist(item.id);
+    } else {
+      await addToWishlist(product.id, product.name, product.price, product.image);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -110,11 +131,28 @@ const Index = () => {
                       </Badge>
                     )}
                     <div className="absolute top-2 right-2 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button size="icon" variant="secondary" className="bg-white/90 hover:bg-white">
-                        <Heart className="h-4 w-4" />
+                      <Button 
+                        size="icon" 
+                        variant="secondary" 
+                        className="bg-white/90 hover:bg-white"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleWishlistToggle(product);
+                        }}
+                      >
+                        <Heart 
+                          className={`h-4 w-4 ${
+                            user && wishlistItems.some(item => item.product_id === product.id) 
+                              ? 'fill-red-500 text-red-500' 
+                              : ''
+                          }`} 
+                        />
                       </Button>
-                      <Button size="icon" variant="secondary" className="bg-white/90 hover:bg-white">
-                        <Search className="h-4 w-4" />
+                      <Button size="icon" variant="secondary" className="bg-white/90 hover:bg-white" asChild>
+                        <Link to={`/product/${product.id}`}>
+                          <Search className="h-4 w-4" />
+                        </Link>
                       </Button>
                     </div>
                   </div>
@@ -140,7 +178,10 @@ const Index = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="p-4 pt-0">
-                  <Button className="w-full bg-brand-dark hover:bg-brand-accent text-white">
+                  <Button 
+                    className="w-full bg-brand-dark hover:bg-brand-accent text-white"
+                    onClick={() => handleAddToCart(product)}
+                  >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart
                   </Button>

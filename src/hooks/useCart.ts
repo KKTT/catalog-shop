@@ -58,6 +58,12 @@ export function useCart() {
       return false;
     }
 
+    // Show immediate feedback
+    toast({
+      title: "Added to Cart",
+      description: `${productName} has been added to your cart.`
+    });
+
     try {
       // Check if item already exists
       const { data: existingItem } = await supabase
@@ -65,10 +71,17 @@ export function useCart() {
         .select('*')
         .eq('user_id', user.id)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (existingItem) {
-        // Update quantity
+        // Optimistically update local state
+        setCartItems(prev => prev.map(item => 
+          item.id === existingItem.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        ));
+
+        // Update in database
         const { error } = await supabase
           .from('cart_items')
           .update({ quantity: existingItem.quantity + 1 })
@@ -76,8 +89,23 @@ export function useCart() {
 
         if (error) throw error;
       } else {
-        // Insert new item
-        const { error } = await supabase
+        // Create optimistic new item
+        const optimisticItem = {
+          id: `temp-${Date.now()}`,
+          user_id: user.id,
+          product_id: productId,
+          product_name: productName,
+          price: price,
+          image_url: imageUrl,
+          quantity: 1,
+          created_at: new Date().toISOString()
+        };
+
+        // Optimistically update local state
+        setCartItems(prev => [...prev, optimisticItem]);
+
+        // Insert in database
+        const { data, error } = await supabase
           .from('cart_items')
           .insert({
             user_id: user.id,
@@ -86,22 +114,23 @@ export function useCart() {
             price: price,
             image_url: imageUrl,
             quantity: 1
-          });
+          })
+          .select()
+          .single();
 
         if (error) throw error;
+
+        // Replace optimistic item with real data
+        setCartItems(prev => prev.map(item => 
+          item.id === optimisticItem.id ? data : item
+        ));
       }
       
-      // Optimistically update local state first
-      toast({
-        title: "Added to Cart",
-        description: `${productName} has been added to your cart.`
-      });
-      
-      // Then fetch updated data
-      fetchCartItems();
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
+      // Revert optimistic update on error
+      fetchCartItems();
       toast({
         title: "Error",
         description: "Failed to add item to cart.",
