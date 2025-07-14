@@ -72,10 +72,9 @@ const Auth = () => {
       
       if (error) throw error;
       
-      alert('Registration successful! Please check your email to confirm your account, then return to login.');
-      // Clear form and switch to login tab
+      // Clear form and redirect to verification page
       setRegisterData({ name: "", email: "", password: "", confirmPassword: "" });
-      setActiveTab('login');
+      window.location.href = '/verify-email';
     } catch (error: any) {
       console.error('Registration error:', error.message);
       alert('Registration failed: ' + error.message);
