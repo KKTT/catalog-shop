@@ -199,11 +199,14 @@ const Products = () => {
                       size="icon" 
                       variant="secondary" 
                       className="bg-white/90 hover:bg-white"
-                      onClick={() => handleWishlistToggle(product)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWishlistToggle(product);
+                      }}
                     >
                       <Heart 
                         className={`h-4 w-4 ${
-                          isInWishlist(product.id) ? 'fill-red-500 text-red-500' : ''
+                          user && isInWishlist(product.id) ? 'fill-red-500 text-red-500' : ''
                         }`} 
                       />
                     </Button>
@@ -239,7 +242,10 @@ const Products = () => {
                   <Button 
                     className="w-full bg-brand-dark hover:bg-brand-accent text-white"
                     disabled={!product.inStock}
-                    onClick={() => handleAddToCart(product)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddToCart(product);
+                    }}
                   >
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Add to Cart

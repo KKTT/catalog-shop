@@ -46,7 +46,8 @@ const ProductDetail = () => {
       });
       return;
     }
-    addToCart(product.id, product.name, product.price, product.image);
+    // Use the main image instead of product.image for consistency
+    addToCart(product.id, product.name, product.price, product.images[0]);
   };
 
   const handleWishlistToggle = () => {
@@ -62,7 +63,8 @@ const ProductDetail = () => {
     if (isInWishlist(product.id)) {
       removeFromWishlist(product.id);
     } else {
-      addToWishlist(product.id, product.name, product.price, product.image);
+      // Use the main image instead of product.image for consistency
+      addToWishlist(product.id, product.name, product.price, product.images[0]);
     }
   };
 
@@ -91,26 +93,24 @@ const ProductDetail = () => {
               )}
             </div>
             
-            {/* Thumbnail Images */}
-            {product.images.length > 1 && (
-              <div className="flex space-x-2">
-                {product.images.map((image, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedImage(index)}
-                    className={`relative overflow-hidden rounded-md border-2 transition-colors ${
-                      selectedImage === index ? 'border-brand-gold' : 'border-transparent hover:border-gray-300'
-                    }`}
-                  >
-                    <img 
-                      src={image} 
-                      alt={`${product.name} ${index + 1}`}
-                      className="w-20 h-20 object-cover"
-                    />
-                  </button>
-                ))}
-              </div>
-            )}
+            {/* Thumbnail Images - Always show all available images */}
+            <div className="flex space-x-2 overflow-x-auto">
+              {product.images.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImage(index)}
+                  className={`relative overflow-hidden rounded-md border-2 transition-colors flex-shrink-0 ${
+                    selectedImage === index ? 'border-brand-gold' : 'border-transparent hover:border-gray-300'
+                  }`}
+                >
+                  <img 
+                    src={image} 
+                    alt={`${product.name} ${index + 1}`}
+                    className="w-20 h-20 object-cover"
+                  />
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Product Info */}

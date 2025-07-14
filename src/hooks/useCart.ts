@@ -59,26 +59,46 @@ export function useCart() {
     }
 
     try {
-      const { error } = await supabase
+      // Check if item already exists
+      const { data: existingItem } = await supabase
         .from('cart_items')
-        .upsert({
-          user_id: user.id,
-          product_id: productId,
-          product_name: productName,
-          price: price,
-          image_url: imageUrl,
-          quantity: 1
-        }, {
-          onConflict: 'user_id,product_id'
-        });
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('product_id', productId)
+        .single();
 
-      if (error) throw error;
+      if (existingItem) {
+        // Update quantity
+        const { error } = await supabase
+          .from('cart_items')
+          .update({ quantity: existingItem.quantity + 1 })
+          .eq('id', existingItem.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new item
+        const { error } = await supabase
+          .from('cart_items')
+          .insert({
+            user_id: user.id,
+            product_id: productId,
+            product_name: productName,
+            price: price,
+            image_url: imageUrl,
+            quantity: 1
+          });
+
+        if (error) throw error;
+      }
       
-      await fetchCartItems();
+      // Optimistically update local state first
       toast({
         title: "Added to Cart",
         description: `${productName} has been added to your cart.`
       });
+      
+      // Then fetch updated data
+      fetchCartItems();
       return true;
     } catch (error) {
       console.error('Error adding to cart:', error);
