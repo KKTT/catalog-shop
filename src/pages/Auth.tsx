@@ -62,23 +62,37 @@ const Auth = () => {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        // Handle rate limiting error specifically
+        if (error.message.includes('For security purposes')) {
+          alert('Please wait a moment before trying again. Registration requests are rate-limited for security.');
+          return;
+        }
+        throw error;
+      }
       
       // Send custom confirmation email using our edge function
       if (data.user && !data.user.email_confirmed_at) {
         const confirmationUrl = `${window.location.origin}/auth#confirmation_url=${data.user.id}`;
         
-        await supabase.functions.invoke('send-confirmation-email', {
+        const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
           body: {
             email: registerData.email,
             fullName: registerData.fullName,
             confirmationUrl: confirmationUrl
           }
         });
+        
+        if (emailError) {
+          console.error('Email sending error:', emailError);
+          // Don't fail registration if email fails
+          alert('Account created but confirmation email failed to send. Please check your email or try again later.');
+        }
       }
       
       // Clear form and redirect to verification page
       setRegisterData({ fullName: "", phoneNumber: "", email: "" });
+      alert('Registration successful! Please check your email for confirmation.');
       window.location.href = '/verify-email';
     } catch (error: any) {
       console.error('Registration error:', error.message);
