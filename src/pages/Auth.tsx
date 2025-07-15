@@ -50,7 +50,7 @@ const Auth = () => {
       // Generate a temporary password for email-based registration
       const tempPassword = Math.random().toString(36).slice(-8) + "A1!";
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: registerData.email,
         password: tempPassword,
         options: {
@@ -63,6 +63,19 @@ const Auth = () => {
       });
       
       if (error) throw error;
+      
+      // Send custom confirmation email using our edge function
+      if (data.user && !data.user.email_confirmed_at) {
+        const confirmationUrl = `${window.location.origin}/auth#confirmation_url=${data.user.id}`;
+        
+        await supabase.functions.invoke('send-confirmation-email', {
+          body: {
+            email: registerData.email,
+            fullName: registerData.fullName,
+            confirmationUrl: confirmationUrl
+          }
+        });
+      }
       
       // Clear form and redirect to verification page
       setRegisterData({ fullName: "", phoneNumber: "", email: "" });
