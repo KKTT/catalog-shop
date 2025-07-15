@@ -14,12 +14,11 @@ import Footer from "@/components/Footer";
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({ fullName: "", phoneNumber: "" });
   const [registerData, setRegisterData] = useState({ 
-    name: "", 
-    email: "", 
-    password: "", 
-    confirmPassword: "" 
+    fullName: "", 
+    phoneNumber: "", 
+    email: ""
   });
   
   const { user, loading } = useAuth();
@@ -35,15 +34,9 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
-      });
-      
-      if (error) throw error;
-      
-      // Redirect will happen automatically via auth state change
-      window.location.href = '/';
+      // For now, we'll use phone number as login identifier
+      // In a real app, you'd implement phone-based authentication
+      alert('Phone-based login not implemented yet. Please use email registration first.');
     } catch (error: any) {
       console.error('Login error:', error.message);
       alert('Login failed: ' + error.message);
@@ -53,19 +46,18 @@ const Auth = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (registerData.password !== registerData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-    
     try {
+      // Generate a temporary password for email-based registration
+      const tempPassword = Math.random().toString(36).slice(-8) + "A1!";
+      
       const { error } = await supabase.auth.signUp({
         email: registerData.email,
-        password: registerData.password,
+        password: tempPassword,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
-            full_name: registerData.name,
+            full_name: registerData.fullName,
+            phone_number: registerData.phoneNumber,
           }
         }
       });
@@ -73,7 +65,7 @@ const Auth = () => {
       if (error) throw error;
       
       // Clear form and redirect to verification page
-      setRegisterData({ name: "", email: "", password: "", confirmPassword: "" });
+      setRegisterData({ fullName: "", phoneNumber: "", email: "" });
       window.location.href = '/verify-email';
     } catch (error: any) {
       console.error('Registration error:', error.message);
@@ -101,35 +93,24 @@ const Auth = () => {
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                      <Label htmlFor="login-email">Email</Label>
+                      <Label htmlFor="login-fullname">Full Name</Label>
                       <Input
-                        id="login-email"
-                        type="email"
-                        value={loginData.email}
-                        onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
+                        id="login-fullname"
+                        type="text"
+                        value={loginData.fullName}
+                        onChange={(e) => setLoginData(prev => ({ ...prev, fullName: e.target.value }))}
                         required
                       />
                     </div>
                     <div>
-                      <Label htmlFor="login-password">Password</Label>
-                      <div className="relative">
-                        <Input
-                          id="login-password"
-                          type={showPassword ? "text" : "password"}
-                          value={loginData.password}
-                          onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
-                          required
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-1/2 -translate-y-1/2"
-                          onClick={() => setShowPassword(!showPassword)}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
+                      <Label htmlFor="login-phone">Phone Number</Label>
+                      <Input
+                        id="login-phone"
+                        type="tel"
+                        value={loginData.phoneNumber}
+                        onChange={(e) => setLoginData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                        required
+                      />
                     </div>
                     <Button type="submit" className="w-full bg-brand-gold text-brand-dark hover:bg-brand-gold/90">
                       Login
@@ -150,8 +131,18 @@ const Auth = () => {
                       <Label htmlFor="register-name">Full Name</Label>
                       <Input
                         id="register-name"
-                        value={registerData.name}
-                        onChange={(e) => setRegisterData(prev => ({ ...prev, name: e.target.value }))}
+                        value={registerData.fullName}
+                        onChange={(e) => setRegisterData(prev => ({ ...prev, fullName: e.target.value }))}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="register-phone">Phone Number</Label>
+                      <Input
+                        id="register-phone"
+                        type="tel"
+                        value={registerData.phoneNumber}
+                        onChange={(e) => setRegisterData(prev => ({ ...prev, phoneNumber: e.target.value }))}
                         required
                       />
                     </div>
@@ -162,26 +153,6 @@ const Auth = () => {
                         type="email"
                         value={registerData.email}
                         onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="register-password">Password</Label>
-                      <Input
-                        id="register-password"
-                        type="password"
-                        value={registerData.password}
-                        onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="confirm-password">Confirm Password</Label>
-                      <Input
-                        id="confirm-password"
-                        type="password"
-                        value={registerData.confirmPassword}
-                        onChange={(e) => setRegisterData(prev => ({ ...prev, confirmPassword: e.target.value }))}
                         required
                       />
                     </div>
