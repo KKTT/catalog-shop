@@ -9,6 +9,8 @@ interface Order {
   status: string;
   created_at: string;
   updated_at: string;
+  delivery_fee?: number;
+  delivery_address_id?: string;
   order_items?: OrderItem[];
 }
 
@@ -19,6 +21,7 @@ interface OrderItem {
   product_name: string;
   quantity: number;
   price: number;
+  image_url?: string;
   created_at: string;
 }
 

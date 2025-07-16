@@ -1,13 +1,18 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useCart } from '@/hooks/useCart';
-import { ShoppingCart, Plus, Minus, Trash2 } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, Trash2, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 export function CartSidebar() {
   const { cartItems, cartTotal, cartCount, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
+  const [saveAddress, setSaveAddress] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('credit-card');
 
   if (!user) return null;
 
@@ -78,12 +83,61 @@ export function CartSidebar() {
                 ))}
               </div>
               
-              <div className="border-t pt-4">
-                <div className="flex justify-between items-center font-medium text-lg">
+              <div className="border-t pt-4 space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="save-address" 
+                      checked={saveAddress}
+                      onCheckedChange={(checked) => setSaveAddress(checked as boolean)}
+                    />
+                    <label 
+                      htmlFor="save-address" 
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      Save delivery address for future use
+                    </label>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Payment Method</label>
+                    <div className="flex gap-2">
+                      <Button
+                        variant={paymentMethod === 'credit-card' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPaymentMethod('credit-card')}
+                      >
+                        Credit Card
+                      </Button>
+                      <Button
+                        variant={paymentMethod === 'aba-pay' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPaymentMethod('aba-pay')}
+                        className="relative"
+                      >
+                        ABA Pay
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 ml-1" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs text-sm">
+                                Transfer the total to our ABA account 007827973. Then upload the receipt.
+                              </p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex justify-between items-center font-medium text-lg border-t pt-3">
                   <span>Total:</span>
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
-                <Button className="w-full mt-4" size="lg">
+                <Button className="w-full" size="lg">
                   Checkout
                 </Button>
               </div>
