@@ -14,7 +14,7 @@ import Footer from "@/components/Footer";
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('login');
-  const [loginData, setLoginData] = useState({ fullName: "", phoneNumber: "" });
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({ 
     fullName: "", 
     phoneNumber: "", 
@@ -34,9 +34,22 @@ const Auth = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // For now, we'll use phone number as login identifier
-      // In a real app, you'd implement phone-based authentication
-      alert('Phone-based login not implemented yet. Please use email registration first.');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginData.email,
+        password: loginData.password,
+      });
+
+      if (error) {
+        if (error.message.includes('For security purposes')) {
+          alert('Please wait a moment before trying again. Login requests are rate-limited for security.');
+          return;
+        }
+        throw error;
+      }
+
+      // Clear form data
+      setLoginData({ email: "", password: "" });
+      alert('Login successful!');
     } catch (error: any) {
       console.error('Login error:', error.message);
       alert('Login failed: ' + error.message);
@@ -120,24 +133,37 @@ const Auth = () => {
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                      <Label htmlFor="login-fullname">Full Name</Label>
+                      <Label htmlFor="login-email">Email</Label>
                       <Input
-                        id="login-fullname"
-                        type="text"
-                        value={loginData.fullName}
-                        onChange={(e) => setLoginData(prev => ({ ...prev, fullName: e.target.value }))}
+                        id="login-email"
+                        type="email"
+                        value={loginData.email}
+                        onChange={(e) => setLoginData(prev => ({ ...prev, email: e.target.value }))}
                         required
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="login-phone">Phone Number</Label>
+                    <div className="relative">
+                      <Label htmlFor="login-password">Password</Label>
                       <Input
-                        id="login-phone"
-                        type="tel"
-                        value={loginData.phoneNumber}
-                        onChange={(e) => setLoginData(prev => ({ ...prev, phoneNumber: e.target.value }))}
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        value={loginData.password}
+                        onChange={(e) => setLoginData(prev => ({ ...prev, password: e.target.value }))}
                         required
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-6 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                     <Button type="submit" className="w-full bg-brand-gold text-brand-dark hover:bg-brand-gold/90">
                       Login
