@@ -17,8 +17,8 @@ const Auth = () => {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
   const [registerData, setRegisterData] = useState({ 
     fullName: "", 
-    phoneNumber: "", 
-    email: ""
+    email: "",
+    password: ""
   });
   
   const { user, loading } = useAuth();
@@ -60,17 +60,13 @@ const Auth = () => {
     e.preventDefault();
     
     try {
-      // Generate a temporary password for email-based registration
-      const tempPassword = Math.random().toString(36).slice(-8) + "A1!";
-      
       const { data, error } = await supabase.auth.signUp({
         email: registerData.email,
-        password: tempPassword,
+        password: registerData.password,
         options: {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: registerData.fullName,
-            phone_number: registerData.phoneNumber,
           }
         }
       });
@@ -84,29 +80,9 @@ const Auth = () => {
         throw error;
       }
       
-      // Send custom confirmation email using our edge function
-      if (data.user && !data.user.email_confirmed_at) {
-        const confirmationUrl = `${window.location.origin}/auth#confirmation_url=${data.user.id}`;
-        
-        const { error: emailError } = await supabase.functions.invoke('send-confirmation-email', {
-          body: {
-            email: registerData.email,
-            fullName: registerData.fullName,
-            confirmationUrl: confirmationUrl
-          }
-        });
-        
-        if (emailError) {
-          console.error('Email sending error:', emailError);
-          // Don't fail registration if email fails
-          alert('Account created but confirmation email failed to send. Please check your email or try again later.');
-        }
-      }
-      
-      // Clear form and redirect to verification page
-      setRegisterData({ fullName: "", phoneNumber: "", email: "" });
+      // Clear form
+      setRegisterData({ fullName: "", email: "", password: "" });
       alert('Registration successful! Please check your email for confirmation.');
-      window.location.href = '/verify-email';
     } catch (error: any) {
       console.error('Registration error:', error.message);
       alert('Registration failed: ' + error.message);
@@ -190,16 +166,6 @@ const Auth = () => {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="register-phone">Phone Number</Label>
-                      <Input
-                        id="register-phone"
-                        type="tel"
-                        value={registerData.phoneNumber}
-                        onChange={(e) => setRegisterData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                        required
-                      />
-                    </div>
-                    <div>
                       <Label htmlFor="register-email">Email</Label>
                       <Input
                         id="register-email"
@@ -208,6 +174,29 @@ const Auth = () => {
                         onChange={(e) => setRegisterData(prev => ({ ...prev, email: e.target.value }))}
                         required
                       />
+                    </div>
+                    <div className="relative">
+                      <Label htmlFor="register-password">Password</Label>
+                      <Input
+                        id="register-password"
+                        type={showPassword ? "text" : "password"}
+                        value={registerData.password}
+                        onChange={(e) => setRegisterData(prev => ({ ...prev, password: e.target.value }))}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="absolute right-0 top-6 h-full px-3 py-2 hover:bg-transparent"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-4 w-4" />
+                        ) : (
+                          <Eye className="h-4 w-4" />
+                        )}
+                      </Button>
                     </div>
                     <Button type="submit" className="w-full bg-brand-gold text-brand-dark hover:bg-brand-gold/90">
                       Register
