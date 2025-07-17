@@ -177,7 +177,7 @@ export function CartSidebar() {
                         size="sm"
                         onClick={() => setPaymentMethod('credit-card')}
                       >
-                        Credit Card
+                        Delivery Person
                       </Button>
                       <Button
                         variant={paymentMethod === 'aba-pay' ? 'default' : 'outline'}
