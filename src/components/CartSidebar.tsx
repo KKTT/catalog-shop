@@ -17,7 +17,7 @@ export function CartSidebar() {
   const { cartItems, cartTotal, cartCount, updateQuantity, removeFromCart } = useCart();
   const { user } = useAuth();
   const [saveAddress, setSaveAddress] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('credit-card');
+  const [paymentMethod, setPaymentMethod] = useState('delivery-person');
   const [showAddressForm, setShowAddressForm] = useState(false);
   
   const { addresses } = useDeliveryAddresses();
@@ -173,9 +173,9 @@ export function CartSidebar() {
                     <label className="text-sm font-medium">Payment Method</label>
                     <div className="flex gap-2">
                       <Button
-                        variant={paymentMethod === 'credit-card' ? 'default' : 'outline'}
+                        variant={paymentMethod === 'delivery-person' ? 'default' : 'outline'}
                         size="sm"
-                        onClick={() => setPaymentMethod('credit-card')}
+                        onClick={() => setPaymentMethod('delivery-person')}
                       >
                         Delivery Person
                       </Button>
@@ -183,23 +183,28 @@ export function CartSidebar() {
                         variant={paymentMethod === 'aba-pay' ? 'default' : 'outline'}
                         size="sm"
                         onClick={() => setPaymentMethod('aba-pay')}
-                        className="relative"
                       >
                         ABA Pay
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3 w-3 ml-1" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p className="max-w-xs text-sm">
-                                Transfer the total to our ABA account 007827973. Then upload the receipt.
-                              </p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
                       </Button>
                     </div>
+                    
+                    {paymentMethod === 'aba-pay' && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-3">
+                        <div className="text-sm text-blue-800">
+                          <p className="font-medium">ABA Payment Instructions:</p>
+                          <p>Transfer the total to our ABA account <strong>007827973</strong>. Then upload the receipt.</p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="receipt-upload" className="text-sm font-medium">Upload Receipt</Label>
+                          <Input
+                            id="receipt-upload"
+                            type="file"
+                            accept="image/*,.pdf"
+                            className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
