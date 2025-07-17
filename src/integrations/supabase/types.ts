@@ -174,6 +174,7 @@ export type Database = {
           created_at: string
           full_name: string | null
           id: string
+          image: string | null
           password: number | null
           phone_number: string | null
           updated_at: string
@@ -184,6 +185,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          image?: string | null
           password?: number | null
           phone_number?: string | null
           updated_at?: string
@@ -194,6 +196,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          image?: string | null
           password?: number | null
           phone_number?: string | null
           updated_at?: string
