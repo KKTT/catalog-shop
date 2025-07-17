@@ -11,6 +11,8 @@ interface ShippingAddress {
   state: string;
   postal_code: string;
   country: string;
+  phone_number?: string;
+  map_link?: string;
 }
 
 export function useCheckout() {
@@ -20,7 +22,9 @@ export function useCheckout() {
     city: '',
     state: '',
     postal_code: '',
-    country: 'Cambodia'
+    country: 'Cambodia',
+    phone_number: '',
+    map_link: ''
   });
   
   const { cartItems, cartTotal, clearCart } = useCart();
@@ -119,7 +123,9 @@ export function useCheckout() {
         city: savedAddress.city || '',
         state: savedAddress.state || '',
         postal_code: savedAddress.postal_code || '',
-        country: savedAddress.country || 'Cambodia'
+        country: savedAddress.country || 'Cambodia',
+        phone_number: (savedAddress as any).phone_number || '',
+        map_link: (savedAddress as any).map_link || ''
       });
     }
   };

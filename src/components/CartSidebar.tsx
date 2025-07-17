@@ -129,28 +129,23 @@ export function CartSidebar() {
                       </SelectContent>
                     </Select>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <Input
-                        placeholder="Address Line"
+                        placeholder="Phone Number *"
+                        value={shippingAddress.phone_number || ''}
+                        onChange={(e) => setShippingAddress(prev => ({ ...prev, phone_number: e.target.value }))}
+                        required
+                      />
+                      <Input
+                        placeholder="Delivery Location *"
                         value={shippingAddress.address_line}
                         onChange={(e) => setShippingAddress(prev => ({ ...prev, address_line: e.target.value }))}
+                        required
                       />
-                      <div className="grid grid-cols-2 gap-2">
-                        <Input
-                          placeholder="City"
-                          value={shippingAddress.city}
-                          onChange={(e) => setShippingAddress(prev => ({ ...prev, city: e.target.value }))}
-                        />
-                        <Input
-                          placeholder="State/Province"
-                          value={shippingAddress.state}
-                          onChange={(e) => setShippingAddress(prev => ({ ...prev, state: e.target.value }))}
-                        />
-                      </div>
                       <Input
-                        placeholder="Postal Code"
-                        value={shippingAddress.postal_code}
-                        onChange={(e) => setShippingAddress(prev => ({ ...prev, postal_code: e.target.value }))}
+                        placeholder="Map Link (optional)"
+                        value={shippingAddress.map_link || ''}
+                        onChange={(e) => setShippingAddress(prev => ({ ...prev, map_link: e.target.value }))}
                       />
                     </div>
                   )}
@@ -171,40 +166,57 @@ export function CartSidebar() {
                   
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Payment Method</label>
-                    <div className="flex gap-2">
-                      <Button
-                        variant={paymentMethod === 'delivery-person' ? 'default' : 'outline'}
-                        size="sm"
+                    <div className="space-y-3">
+                      <div 
+                        className={`p-3 border rounded-lg cursor-pointer ${paymentMethod === 'delivery-person' ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
                         onClick={() => setPaymentMethod('delivery-person')}
                       >
-                        Delivery Person
-                      </Button>
-                      <Button
-                        variant={paymentMethod === 'aba-pay' ? 'default' : 'outline'}
-                        size="sm"
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="radio" 
+                            checked={paymentMethod === 'delivery-person'} 
+                            onChange={() => setPaymentMethod('delivery-person')}
+                            className="text-primary"
+                          />
+                          <span className="font-medium">Delivery Person</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1 ml-6">
+                          User will pay the delivery person upon arrival.
+                        </p>
+                      </div>
+
+                      <div 
+                        className={`p-3 border rounded-lg cursor-pointer ${paymentMethod === 'aba-pay' ? 'border-primary bg-primary/5' : 'border-gray-200'}`}
                         onClick={() => setPaymentMethod('aba-pay')}
                       >
-                        ABA Pay
-                      </Button>
-                    </div>
-                    
-                    {paymentMethod === 'aba-pay' && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 space-y-3">
-                        <div className="text-sm text-blue-800">
-                          <p className="font-medium">ABA Payment Instructions:</p>
-                          <p>Transfer the total to our ABA account <strong>007827973</strong>. Then upload the receipt.</p>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="receipt-upload" className="text-sm font-medium">Upload Receipt</Label>
-                          <Input
-                            id="receipt-upload"
-                            type="file"
-                            accept="image/*,.pdf"
-                            className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                        <div className="flex items-center gap-2">
+                          <input 
+                            type="radio" 
+                            checked={paymentMethod === 'aba-pay'} 
+                            onChange={() => setPaymentMethod('aba-pay')}
+                            className="text-primary"
                           />
+                          <span className="font-medium">ABA Pay</span>
                         </div>
+                        {paymentMethod === 'aba-pay' && (
+                          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                            <div className="text-sm text-blue-800 space-y-2">
+                              <p><strong>ABA Account:</strong> 007827973</p>
+                              <p>Please transfer the total to the above ABA account. Then upload your payment receipt.</p>
+                            </div>
+                            <div className="mt-3 space-y-2">
+                              <Label htmlFor="receipt-upload" className="text-sm font-medium">Upload Receipt</Label>
+                              <Input
+                                id="receipt-upload"
+                                type="file"
+                                accept="image/*,.pdf"
+                                className="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                              />
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
                 
