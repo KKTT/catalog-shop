@@ -43,17 +43,18 @@ export function CartSidebar() {
           )}
         </Button>
       </SheetTrigger>
-      <SheetContent className="w-96">
-        <SheetHeader>
+      <SheetContent className="w-96 flex flex-col">
+        <SheetHeader className="flex-shrink-0">
           <SheetTitle>Shopping Cart</SheetTitle>
         </SheetHeader>
         
-        <div className="mt-6 space-y-4">
+        <div className="flex-1 flex flex-col min-h-0 mt-6">
           {cartItems.length === 0 ? (
             <p className="text-center text-muted-foreground py-8">Your cart is empty</p>
           ) : (
             <>
-              <div className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Cart Items - Scrollable */}
+              <div className="flex-shrink-0 space-y-4 max-h-48 overflow-y-auto mb-4">
                 {cartItems.map((item) => (
                   <div key={item.id} className="flex items-center gap-3 p-3 border rounded-lg">
                     {item.image_url && (
@@ -98,7 +99,8 @@ export function CartSidebar() {
                 ))}
               </div>
               
-              <div className="border-t pt-4 space-y-4">
+              {/* Checkout Form - Scrollable */}
+              <div className="flex-1 overflow-y-auto space-y-4 border-t pt-4">
                 {/* Shipping Address Section */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -219,16 +221,28 @@ export function CartSidebar() {
                     </div>
                   </div>
                 </div>
-                
-                <div className="flex justify-between items-center font-medium text-lg border-t pt-3">
+              </div>
+              
+              {/* Fixed Bottom Section - Total and Checkout */}
+              <div className="flex-shrink-0 border-t pt-4 space-y-4 bg-background">
+                <div className="flex justify-between items-center font-medium text-lg">
                   <span>Total:</span>
                   <span>${cartTotal.toFixed(2)}</span>
                 </div>
                 <Button 
                   className="w-full" 
                   size="lg"
-                  onClick={() => processCheckout(paymentMethod, saveAddress)}
-                  disabled={isProcessing}
+                  onClick={() => {
+                    console.log('Checkout clicked with data:', {
+                      cartItems,
+                      cartTotal,
+                      shippingAddress,
+                      paymentMethod,
+                      saveAddress
+                    });
+                    processCheckout(paymentMethod, saveAddress);
+                  }}
+                  disabled={isProcessing || !shippingAddress.address_line || !shippingAddress.phone_number}
                 >
                   {isProcessing ? 'Processing...' : 'Checkout'}
                 </Button>
