@@ -17,6 +17,8 @@ import UserProfile from "./pages/UserProfile";
 import Wishlist from "./pages/Wishlist";
 import EmailVerification from "./pages/EmailVerification";
 import NotFound from "./pages/NotFound";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
 
 const queryClient = new QueryClient();
 
@@ -40,6 +42,15 @@ const App = () => (
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/verify-email" element={<EmailVerification />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="products" element={<div>Admin Products - Coming Soon</div>} />
+              <Route path="orders" element={<div>Admin Orders - Coming Soon</div>} />
+              <Route path="users" element={<div>Admin Users - Coming Soon</div>} />
+              <Route path="admin-users" element={<div>Admin User Management - Coming Soon</div>} />
+              <Route path="reports" element={<div>Admin Reports - Coming Soon</div>} />
+              <Route path="settings" element={<div>Admin Settings - Coming Soon</div>} />
+            </Route>
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
