@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Shield, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Navigate } from "react-router-dom";
+import { Navigate, useSearchParams, useNavigate } from "react-router-dom";
+import { useAdmin } from "@/hooks/useAdmin";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useToast } from "@/hooks/use-toast";
 
 const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -22,13 +25,39 @@ const Auth = () => {
   });
   
   const { user, loading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useAdmin();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const isAdminLogin = searchParams.get('admin') === 'true';
 
-  if (loading) {
+  useEffect(() => {
+    if (user && !loading && !adminLoading) {
+      if (isAdminLogin && isAdmin) {
+        navigate('/admin', { replace: true });
+      } else if (isAdminLogin && !isAdmin) {
+        toast({
+          title: "Access Denied",
+          description: "You don't have admin privileges",
+          variant: "destructive"
+        });
+      } else if (!isAdminLogin) {
+        navigate('/', { replace: true });
+      }
+    }
+  }, [user, isAdmin, loading, adminLoading, isAdminLogin, navigate]);
+
+  if (loading || adminLoading) {
     return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   }
 
-  if (user) {
+  if (user && !isAdminLogin) {
     return <Navigate to="/" replace />;
+  }
+
+  if (user && isAdminLogin && isAdmin) {
+    return <Navigate to="/admin" replace />;
   }
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -49,10 +78,18 @@ const Auth = () => {
 
       // Clear form data
       setLoginData({ email: "", password: "" });
-      alert('Login successful!');
+      
+      toast({
+        title: "Login successful!",
+        description: isAdminLogin ? "Redirecting to admin panel..." : "Welcome back!",
+      });
     } catch (error: any) {
       console.error('Login error:', error.message);
-      alert('Login failed: ' + error.message);
+      toast({
+        title: "Login failed",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -82,10 +119,18 @@ const Auth = () => {
       
       // Clear form
       setRegisterData({ fullName: "", email: "", password: "" });
-      alert('Registration successful! Please check your email for confirmation.');
+      
+      toast({
+        title: "Registration successful!",
+        description: "Please check your email for confirmation.",
+      });
     } catch (error: any) {
       console.error('Registration error:', error.message);
-      alert('Registration failed: ' + error.message);
+      toast({
+        title: "Registration failed",
+        description: error.message,
+        variant: "destructive"
+      });
     }
   };
 
@@ -95,6 +140,22 @@ const Auth = () => {
       
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-md mx-auto">
+          {isAdminLogin && (
+            <div className="text-center mb-6">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Crown className="h-6 w-6 text-primary" />
+                <h1 className="text-2xl font-bold">Admin Access</h1>
+              </div>
+              <Badge variant="outline" className="mb-4">
+                <Shield className="h-3 w-3 mr-1" />
+                Administrative Login Required
+              </Badge>
+              <p className="text-sm text-muted-foreground">
+                This area requires administrator privileges
+              </p>
+            </div>
+          )}
+          
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Login</TabsTrigger>
@@ -104,7 +165,16 @@ const Auth = () => {
             <TabsContent value="login">
               <Card>
                 <CardHeader>
-                  <CardTitle>Welcome Back</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    {isAdminLogin ? (
+                      <>
+                        <Crown className="h-5 w-5" />
+                        Admin Login
+                      </>
+                    ) : (
+                      "Welcome Back"
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleLogin} className="space-y-4">
@@ -152,7 +222,16 @@ const Auth = () => {
             <TabsContent value="register">
               <Card>
                 <CardHeader>
-                  <CardTitle>Create Account</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    {isAdminLogin ? (
+                      <>
+                        <Crown className="h-5 w-5" />
+                        Admin Registration
+                      </>
+                    ) : (
+                      "Create Account"
+                    )}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleRegister} className="space-y-4">
