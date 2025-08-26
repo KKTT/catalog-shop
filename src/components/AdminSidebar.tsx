@@ -19,11 +19,18 @@ import {
   FileText,
   Crown,
   UserCog,
+  MessageSquare,
 } from "lucide-react";
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3 },
+  { title: "Home Page", url: "/admin/home", icon: Package },
   { title: "Products", url: "/admin/products", icon: Package },
+  { title: "About", url: "/admin/about", icon: FileText },
+  { title: "Blog", url: "/admin/blog", icon: FileText },
+  { title: "Testimonials", url: "/admin/testimonials", icon: MessageSquare },
+  { title: "FAQ", url: "/admin/faq", icon: FileText },
+  { title: "Contact", url: "/admin/contact", icon: MessageSquare },
   { title: "Orders", url: "/admin/orders", icon: ShoppingCart },
   { title: "Users", url: "/admin/users", icon: Users },
   { title: "Admin Users", url: "/admin/admin-users", icon: UserCog },

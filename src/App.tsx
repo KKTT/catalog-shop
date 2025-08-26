@@ -19,6 +19,13 @@ import EmailVerification from "./pages/EmailVerification";
 import NotFound from "./pages/NotFound";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminHome } from "./pages/admin/AdminHome";
+import { AdminProducts } from "./pages/admin/AdminProducts";
+import { AdminAbout } from "./pages/admin/AdminAbout";
+import { AdminBlog } from "./pages/admin/AdminBlog";
+import { AdminTestimonials } from "./pages/admin/AdminTestimonials";
+import { AdminFAQ } from "./pages/admin/AdminFAQ";
+import { AdminContact } from "./pages/admin/AdminContact";
 
 const queryClient = new QueryClient();
 
@@ -44,7 +51,13 @@ const App = () => (
             <Route path="/verify-email" element={<EmailVerification />} />
             <Route path="/admin" element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
-              <Route path="products" element={<div>Admin Products - Coming Soon</div>} />
+              <Route path="home" element={<AdminHome />} />
+              <Route path="products" element={<AdminProducts />} />
+              <Route path="about" element={<AdminAbout />} />
+              <Route path="blog" element={<AdminBlog />} />
+              <Route path="testimonials" element={<AdminTestimonials />} />
+              <Route path="faq" element={<AdminFAQ />} />
+              <Route path="contact" element={<AdminContact />} />
               <Route path="orders" element={<div>Admin Orders - Coming Soon</div>} />
               <Route path="users" element={<div>Admin Users - Coming Soon</div>} />
               <Route path="admin-users" element={<div>Admin User Management - Coming Soon</div>} />
