@@ -110,6 +110,54 @@ export type Database = {
         }
         Relationships: []
       }
+      company_content: {
+        Row: {
+          company_story: string | null
+          core_values: string[] | null
+          created_at: string | null
+          created_by: string | null
+          happy_customers: number | null
+          id: string
+          is_active: boolean | null
+          mission_description: string | null
+          mission_title: string | null
+          products_available: number | null
+          team_size: number | null
+          updated_at: string | null
+          years_experience: number | null
+        }
+        Insert: {
+          company_story?: string | null
+          core_values?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          happy_customers?: number | null
+          id?: string
+          is_active?: boolean | null
+          mission_description?: string | null
+          mission_title?: string | null
+          products_available?: number | null
+          team_size?: number | null
+          updated_at?: string | null
+          years_experience?: number | null
+        }
+        Update: {
+          company_story?: string | null
+          core_values?: string[] | null
+          created_at?: string | null
+          created_by?: string | null
+          happy_customers?: number | null
+          id?: string
+          is_active?: boolean | null
+          mission_description?: string | null
+          mission_title?: string | null
+          products_available?: number | null
+          team_size?: number | null
+          updated_at?: string | null
+          years_experience?: number | null
+        }
+        Relationships: []
+      }
       delivery_addresses: {
         Row: {
           address_line: string
@@ -146,6 +194,120 @@ export type Database = {
           state?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      features_content: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string
+          icon: string
+          id: string
+          is_active: boolean | null
+          sort_order: number | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          icon: string
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          icon?: string
+          id?: string
+          is_active?: boolean | null
+          sort_order?: number | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      hero_content: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          hero_image_url: string | null
+          id: string
+          is_active: boolean | null
+          primary_button_text: string | null
+          secondary_button_text: string | null
+          subtitle: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          primary_button_text?: string | null
+          secondary_button_text?: string | null
+          subtitle?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          hero_image_url?: string | null
+          id?: string
+          is_active?: boolean | null
+          primary_button_text?: string | null
+          secondary_button_text?: string | null
+          subtitle?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      homepage_categories: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          link_url: string | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -336,6 +498,48 @@ export type Database = {
           phone_number?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          customer_image: string | null
+          customer_name: string
+          id: string
+          is_active: boolean | null
+          is_featured: boolean | null
+          product_name: string | null
+          rating: number | null
+          review_text: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_image?: string | null
+          customer_name: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          product_name?: string | null
+          rating?: number | null
+          review_text: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          customer_image?: string | null
+          customer_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_featured?: boolean | null
+          product_name?: string | null
+          rating?: number | null
+          review_text?: string
+          updated_at?: string | null
         }
         Relationships: []
       }

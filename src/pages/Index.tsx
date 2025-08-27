@@ -10,6 +10,7 @@ import { getFeaturedProducts, getNewProducts } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/contexts/AuthContext";
+import { useWebsiteContent } from "@/hooks/useWebsiteContent";
 
 const Index = () => {
   const [featuredProducts] = useState(getFeaturedProducts());
@@ -17,6 +18,14 @@ const Index = () => {
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
+  const { 
+    heroContent, 
+    features, 
+    companyContent, 
+    categories: websiteCategories, 
+    testimonials: websiteTestimonials,
+    loading: contentLoading 
+  } = useWebsiteContent();
 
   const handleAddToCart = async (product: any) => {
     const success = await addToCart(product.id, product.name, product.price, product.image);
@@ -43,26 +52,31 @@ const Index = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">
-                Premium <span className="text-brand-gold">Outdoor Gear</span> for Every Adventure
+                {heroContent ? (
+                  <span dangerouslySetInnerHTML={{ 
+                    __html: heroContent.title.replace(/Outdoor Gear/, '<span class="text-brand-gold">Outdoor Gear</span>') 
+                  }} />
+                ) : (
+                  <>Premium <span className="text-brand-gold">Outdoor Gear</span> for Every Adventure</>
+                )}
               </h1>
               <p className="text-xl text-gray-300 leading-relaxed">
-                Discover our collection of high-quality coolers, camping gear, and outdoor accessories. 
-                Built for durability, designed for performance.
+                {heroContent?.description || "Discover our collection of high-quality coolers, camping gear, and outdoor accessories. Built for durability, designed for performance."}
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button size="lg" className="bg-brand-gold text-brand-dark hover:bg-brand-gold/90 text-lg px-8 py-4">
-                  Shop Now
+                  {heroContent?.primary_button_text || "Shop Now"}
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Button>
                 <Button variant="outline" size="lg" className="border-white text-white hover:bg-white hover:text-brand-dark text-lg px-8 py-4">
-                  View Catalog
+                  {heroContent?.secondary_button_text || "View Catalog"}
                 </Button>
               </div>
             </div>
             <div className="relative">
               <div className="absolute inset-0 bg-brand-gold/20 rounded-full blur-3xl"></div>
               <img 
-                src="/placeholder.svg?height=600&width=600" 
+                src={heroContent?.hero_image_url || "/placeholder.svg?height=600&width=600"} 
                 alt="Featured Products"
                 className="relative z-10 w-full max-w-lg mx-auto"
               />
@@ -75,34 +89,53 @@ const Index = () => {
       <section className="py-16 bg-secondary/50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                <Shield className="h-8 w-8 text-brand-gold" />
-              </div>
-              <h3 className="text-lg font-semibold">Premium Quality</h3>
-              <p className="text-muted-foreground">Durable materials and superior craftsmanship</p>
-            </div>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                <Truck className="h-8 w-8 text-brand-gold" />
-              </div>
-              <h3 className="text-lg font-semibold">Free Shipping</h3>
-              <p className="text-muted-foreground">Free delivery on orders over $100</p>
-            </div>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                <Headphones className="h-8 w-8 text-brand-gold" />
-              </div>
-              <h3 className="text-lg font-semibold">24/7 Support</h3>
-              <p className="text-muted-foreground">Expert customer service always available</p>
-            </div>
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                <Star className="h-8 w-8 text-brand-gold" />
-              </div>
-              <h3 className="text-lg font-semibold">Warranty</h3>
-              <p className="text-muted-foreground">Comprehensive product warranty coverage</p>
-            </div>
+            {features.length > 0 ? features.map((feature) => {
+              const IconComponent = {
+                Shield, Truck, Headphones, Star
+              }[feature.icon] || Shield;
+              
+              return (
+                <div key={feature.id} className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
+                    <IconComponent className="h-8 w-8 text-brand-gold" />
+                  </div>
+                  <h3 className="text-lg font-semibold">{feature.title}</h3>
+                  <p className="text-muted-foreground">{feature.description}</p>
+                </div>
+              );
+            }) : (
+              // Fallback default features
+              <>
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
+                    <Shield className="h-8 w-8 text-brand-gold" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Premium Quality</h3>
+                  <p className="text-muted-foreground">Durable materials and superior craftsmanship</p>
+                </div>
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
+                    <Truck className="h-8 w-8 text-brand-gold" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Free Shipping</h3>
+                  <p className="text-muted-foreground">Free delivery on orders over $100</p>
+                </div>
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
+                    <Headphones className="h-8 w-8 text-brand-gold" />
+                  </div>
+                  <h3 className="text-lg font-semibold">24/7 Support</h3>
+                  <p className="text-muted-foreground">Expert customer service always available</p>
+                </div>
+                <div className="text-center space-y-4">
+                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
+                    <Star className="h-8 w-8 text-brand-gold" />
+                  </div>
+                  <h3 className="text-lg font-semibold">Warranty</h3>
+                  <p className="text-muted-foreground">Comprehensive product warranty coverage</p>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </section>
@@ -205,23 +238,31 @@ const Index = () => {
       <section className="py-16 bg-gradient-to-r from-brand-dark to-brand-accent text-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-4xl mx-auto">
-            <h2 className="text-3xl lg:text-4xl font-bold mb-6">Our Mission</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold mb-6">
+              {companyContent?.mission_title || "Our Mission"}
+            </h2>
             <p className="text-xl leading-relaxed text-gray-300 mb-8">
-              At Than Thorn and Tep Sarak, we're committed to crafting premium outdoor gear that enhances your adventures. 
-              Our innovative designs and superior materials ensure that every product delivers exceptional performance, 
-              durability, and reliability in the great outdoors.
+              {companyContent?.mission_description || 
+                "At Than Thorn and Tep Sarak, we're committed to crafting premium outdoor gear that enhances your adventures. Our innovative designs and superior materials ensure that every product delivers exceptional performance, durability, and reliability in the great outdoors."
+              }
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-brand-gold mb-2">15+</h3>
+                <h3 className="text-2xl font-bold text-brand-gold mb-2">
+                  {companyContent?.years_experience || 15}+
+                </h3>
                 <p>Years of Experience</p>
               </div>
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-brand-gold mb-2">50K+</h3>
+                <h3 className="text-2xl font-bold text-brand-gold mb-2">
+                  {companyContent?.happy_customers ? `${Math.floor(companyContent.happy_customers / 1000)}K+` : '50K+'}
+                </h3>
                 <p>Happy Customers</p>
               </div>
               <div className="text-center">
-                <h3 className="text-2xl font-bold text-brand-gold mb-2">100+</h3>
+                <h3 className="text-2xl font-bold text-brand-gold mb-2">
+                  {companyContent?.products_available || 100}+
+                </h3>
                 <p>Products Available</p>
               </div>
             </div>
@@ -238,17 +279,17 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {[
-              { name: "Soft Coolers", image: "/placeholder.svg?height=300&width=300", link: "/products/soft-cooler" },
-              { name: "Welded Coolers", image: "/placeholder.svg?height=300&width=300", link: "/products/welded-cooler" },
-              { name: "Camping Gear", image: "/placeholder.svg?height=300&width=300", link: "/products/camping" },
-              { name: "Travel & Hunting", image: "/placeholder.svg?height=300&width=300", link: "/products/travel" }
-            ].map((category) => (
-              <Link key={category.name} to={category.link} className="group">
+            {(websiteCategories.length > 0 ? websiteCategories : [
+              { id: '1', name: "Soft Coolers", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/soft-cooler", sort_order: 1, is_active: true },
+              { id: '2', name: "Welded Coolers", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/welded-cooler", sort_order: 2, is_active: true },
+              { id: '3', name: "Camping Gear", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/camping", sort_order: 3, is_active: true },
+              { id: '4', name: "Travel & Hunting", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/travel", sort_order: 4, is_active: true }
+            ]).map((category) => (
+              <Link key={category.id} to={category.link_url || '#'} className="group">
                 <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20">
                   <div className="relative">
                     <img 
-                      src={category.image} 
+                      src={category.image_url || "/placeholder.svg?height=300&width=300"} 
                       alt={category.name}
                       className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -273,27 +314,30 @@ const Index = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
+            {(websiteTestimonials.length > 0 ? websiteTestimonials : [
               {
-                name: "Sarah Johnson",
+                id: '1',
+                customer_name: "Sarah Johnson",
                 rating: 5,
-                review: "Amazing quality coolers! Kept our drinks cold for the entire weekend camping trip. Highly recommend!",
-                product: "Soft Pack Welded Backpack Cooler"
+                review_text: "Amazing quality coolers! Kept our drinks cold for the entire weekend camping trip. Highly recommend!",
+                product_name: "Soft Pack Welded Backpack Cooler"
               },
               {
-                name: "Mike Chen", 
+                id: '2',
+                customer_name: "Mike Chen", 
                 rating: 5,
-                review: "The build quality is exceptional. Very durable and perfect for our hunting expeditions.",
-                product: "EVA Molded Base Cooler"
+                review_text: "The build quality is exceptional. Very durable and perfect for our hunting expeditions.",
+                product_name: "EVA Molded Base Cooler"
               },
               {
-                name: "Emily Davis",
+                id: '3',
+                customer_name: "Emily Davis",
                 rating: 4,
-                review: "Great value for money. The welded construction really makes a difference in durability.",
-                product: "Welded Tote Cooler"
+                review_text: "Great value for money. The welded construction really makes a difference in durability.",
+                product_name: "Welded Tote Cooler"
               }
-            ].map((testimonial, index) => (
-              <Card key={index} className="border-brand-gold/20">
+            ]).map((testimonial) => (
+              <Card key={testimonial.id} className="border-brand-gold/20">
                 <CardContent className="p-6">
                   <div className="flex items-center mb-4">
                     {[...Array(5)].map((_, i) => (
@@ -303,10 +347,10 @@ const Index = () => {
                       />
                     ))}
                   </div>
-                  <p className="text-muted-foreground mb-4">"{testimonial.review}"</p>
+                  <p className="text-muted-foreground mb-4">"{testimonial.review_text}"</p>
                   <div>
-                    <p className="font-semibold">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.product}</p>
+                    <p className="font-semibold">{testimonial.customer_name}</p>
+                    <p className="text-sm text-muted-foreground">{testimonial.product_name}</p>
                   </div>
                 </CardContent>
               </Card>
