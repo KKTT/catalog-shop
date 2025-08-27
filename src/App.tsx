@@ -13,6 +13,8 @@ import Testimonials from "./pages/Testimonials";
 import FAQ from "./pages/FAQ";
 import Contact from "./pages/Contact";
 import Auth from "./pages/Auth";
+import UserLogin from "./pages/UserLogin";
+import AdminLogin from "./pages/AdminLogin";
 import UserProfile from "./pages/UserProfile";
 import Wishlist from "./pages/Wishlist";
 import EmailVerification from "./pages/EmailVerification";
@@ -46,6 +48,8 @@ const App = () => (
             <Route path="/faq" element={<FAQ />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<UserLogin />} />
+            <Route path="/admin-login" element={<AdminLogin />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/wishlist" element={<Wishlist />} />
             <Route path="/verify-email" element={<EmailVerification />} />

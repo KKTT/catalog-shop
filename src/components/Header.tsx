@@ -115,9 +115,14 @@ const Header = ({ onSearchResults, onClearSearch }: HeaderProps) => {
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button asChild className="bg-brand-gold text-brand-dark hover:bg-brand-gold/90">
-                <Link to="/auth">Login</Link>
-              </Button>
+              <div className="flex gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/admin-login">Admin</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/login">Login</Link>
+                </Button>
+              </div>
             )}
           </div>
 
@@ -161,9 +166,14 @@ const Header = ({ onSearchResults, onClearSearch }: HeaderProps) => {
                     </Button>
                   </>
                 ) : (
-                  <Button asChild className="bg-brand-gold text-brand-dark hover:bg-brand-gold/90">
-                    <Link to="/auth">Login</Link>
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button asChild variant="outline" size="sm">
+                      <Link to="/admin-login">Admin</Link>
+                    </Button>
+                    <Button asChild size="sm">
+                      <Link to="/login">Login</Link>
+                    </Button>
+                  </div>
                 )}
               </div>
             </nav>
