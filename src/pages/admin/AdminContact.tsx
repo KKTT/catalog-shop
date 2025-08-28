@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Edit, Save, MessageSquare, Clock } from "lucide-react";
+import { useContact } from "@/hooks/useContact";
+import { useToast } from "@/hooks/use-toast";
 
+// Mock messages since we don't have a messages table yet
 const mockMessages = [
   {
     id: 1,
@@ -40,17 +43,45 @@ const mockMessages = [
 export function AdminContact() {
   const [isEditing, setIsEditing] = useState(false);
   const [messages, setMessages] = useState(mockMessages);
-  const [contactInfo, setContactInfo] = useState({
-    email: "support@yourstore.com",
-    phone: "+1 (555) 123-4567",
-    address: "123 Business St, City, State 12345",
-    businessHours: "Monday - Friday: 9:00 AM - 6:00 PM",
-    supportDescription: "Get in touch with our friendly support team for any questions or assistance."
+  const { contactInfo, loading, updateContactInfo } = useContact();
+  const { toast } = useToast();
+
+  const [editedContactInfo, setEditedContactInfo] = useState({
+    email: "",
+    phone: "",
+    address: "",
+    business_hours: {},
+    support_description: ""
   });
 
-  const handleSave = () => {
-    // Here you would save to your backend
-    setIsEditing(false);
+  // Update local state when contactInfo loads
+  React.useEffect(() => {
+    if (contactInfo) {
+      setEditedContactInfo({
+        email: contactInfo.email || "",
+        phone: contactInfo.phone || "",
+        address: contactInfo.address || "",
+        business_hours: contactInfo.business_hours || {},
+        support_description: contactInfo.support_description || ""
+      });
+    }
+  }, [contactInfo]);
+
+  const handleSave = async () => {
+    const success = await updateContactInfo(editedContactInfo);
+    if (success) {
+      toast({
+        title: "Success",
+        description: "Contact information updated successfully"
+      });
+      setIsEditing(false);
+    } else {
+      toast({
+        title: "Error",
+        description: "Failed to update contact information",
+        variant: "destructive"
+      });
+    }
   };
 
   const updateMessageStatus = (id: number, status: string) => {
@@ -58,6 +89,10 @@ export function AdminContact() {
       msg.id === id ? { ...msg, status } : msg
     ));
   };
+
+  if (loading) {
+    return <div className="p-6">Loading contact information...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -94,8 +129,8 @@ export function AdminContact() {
               <Label htmlFor="email">Email Address</Label>
               <Input
                 id="email"
-                value={contactInfo.email}
-                onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+                value={editedContactInfo.email}
+                onChange={(e) => setEditedContactInfo({...editedContactInfo, email: e.target.value})}
                 disabled={!isEditing}
               />
             </div>
@@ -103,8 +138,8 @@ export function AdminContact() {
               <Label htmlFor="phone">Phone Number</Label>
               <Input
                 id="phone"
-                value={contactInfo.phone}
-                onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+                value={editedContactInfo.phone}
+                onChange={(e) => setEditedContactInfo({...editedContactInfo, phone: e.target.value})}
                 disabled={!isEditing}
               />
             </div>
@@ -112,17 +147,8 @@ export function AdminContact() {
               <Label htmlFor="address">Business Address</Label>
               <Textarea
                 id="address"
-                value={contactInfo.address}
-                onChange={(e) => setContactInfo({...contactInfo, address: e.target.value})}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <Label htmlFor="hours">Business Hours</Label>
-              <Input
-                id="hours"
-                value={contactInfo.businessHours}
-                onChange={(e) => setContactInfo({...contactInfo, businessHours: e.target.value})}
+                value={editedContactInfo.address}
+                onChange={(e) => setEditedContactInfo({...editedContactInfo, address: e.target.value})}
                 disabled={!isEditing}
               />
             </div>
@@ -130,8 +156,8 @@ export function AdminContact() {
               <Label htmlFor="description">Support Description</Label>
               <Textarea
                 id="description"
-                value={contactInfo.supportDescription}
-                onChange={(e) => setContactInfo({...contactInfo, supportDescription: e.target.value})}
+                value={editedContactInfo.support_description}
+                onChange={(e) => setEditedContactInfo({...editedContactInfo, support_description: e.target.value})}
                 disabled={!isEditing}
               />
             </div>

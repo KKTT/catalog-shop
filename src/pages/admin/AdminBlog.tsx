@@ -4,48 +4,40 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Plus, Search, Edit, Trash2, Calendar } from "lucide-react";
-
-const mockPosts = [
-  {
-    id: 1,
-    title: "Getting Started with Our Platform",
-    excerpt: "Learn the basics of using our e-commerce platform effectively.",
-    status: "published",
-    publishedAt: "2024-01-15",
-    category: "Tutorial"
-  },
-  {
-    id: 2,
-    title: "New Product Launch Announcement",
-    excerpt: "Exciting new products are now available in our store.",
-    status: "draft",
-    publishedAt: null,
-    category: "Announcement"
-  },
-  {
-    id: 3,
-    title: "Customer Success Stories",
-    excerpt: "Read about how our customers are achieving great results.",
-    status: "published",
-    publishedAt: "2024-01-10",
-    category: "Case Study"
-  }
-];
+import { useBlog } from "@/hooks/useBlog";
+import { useToast } from "@/hooks/use-toast";
 
 export function AdminBlog() {
-  const [posts, setPosts] = useState(mockPosts);
   const [searchTerm, setSearchTerm] = useState("");
+  const { posts, loading, deletePost } = useBlog();
+  const { toast } = useToast();
 
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    post.category.toLowerCase().includes(searchTerm.toLowerCase())
+    (post.category || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this post?')) {
-      setPosts(posts.filter(post => post.id !== id));
+      const success = await deletePost(id);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "Blog post deleted successfully"
+        });
+      } else {
+        toast({
+          title: "Error", 
+          description: "Failed to delete blog post",
+          variant: "destructive"
+        });
+      }
     }
   };
+
+  if (loading) {
+    return <div className="p-6">Loading blog posts...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -90,10 +82,10 @@ export function AdminBlog() {
                     <Badge variant={post.status === "published" ? "default" : "secondary"}>
                       {post.status}
                     </Badge>
-                    {post.publishedAt && (
+                    {post.published_at && (
                       <div className="flex items-center text-xs text-muted-foreground">
                         <Calendar className="h-3 w-3 mr-1" />
-                        {post.publishedAt}
+                        {new Date(post.published_at).toLocaleDateString()}
                       </div>
                     )}
                   </div>

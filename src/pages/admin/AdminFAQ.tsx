@@ -5,61 +5,52 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { HelpCircle, Plus, Search, Edit, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-
-const mockFAQs = [
-  {
-    id: 1,
-    question: "How do I track my order?",
-    answer: "You can track your order by logging into your account and visiting the Orders section. You'll find tracking information for all your recent purchases.",
-    category: "Orders",
-    isPublished: true
-  },
-  {
-    id: 2,
-    question: "What is your return policy?",
-    answer: "We offer a 30-day return policy for all items in original condition. Please contact our support team to initiate a return.",
-    category: "Returns",
-    isPublished: true
-  },
-  {
-    id: 3,
-    question: "Do you offer international shipping?",
-    answer: "Yes, we ship to most countries worldwide. Shipping costs and delivery times vary by location.",
-    category: "Shipping",
-    isPublished: true
-  },
-  {
-    id: 4,
-    question: "How can I cancel my order?",
-    answer: "Orders can be cancelled within 24 hours of placement. Please contact customer service for assistance.",
-    category: "Orders",
-    isPublished: false
-  }
-];
+import { useFAQ } from "@/hooks/useFAQ";
+import { useToast } from "@/hooks/use-toast";
 
 export function AdminFAQ() {
-  const [faqs, setFaqs] = useState(mockFAQs);
   const [searchTerm, setSearchTerm] = useState("");
-  const [openItems, setOpenItems] = useState<number[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>([]);
+  const { faqs, loading, updateFAQ, deleteFAQ } = useFAQ();
+  const { toast } = useToast();
 
   const filteredFAQs = faqs.filter(faq =>
     faq.question.toLowerCase().includes(searchTerm.toLowerCase()) ||
     faq.category.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this FAQ?')) {
-      setFaqs(faqs.filter(faq => faq.id !== id));
+      const success = await deleteFAQ(id);
+      if (success) {
+        toast({
+          title: "Success",
+          description: "FAQ deleted successfully"
+        });
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete FAQ",
+          variant: "destructive"
+        });
+      }
     }
   };
 
-  const togglePublished = (id: number) => {
-    setFaqs(faqs.map(faq => 
-      faq.id === id ? { ...faq, isPublished: !faq.isPublished } : faq
-    ));
+  const togglePublished = async (id: string) => {
+    const faq = faqs.find(f => f.id === id);
+    if (faq) {
+      const success = await updateFAQ(id, { is_published: !faq.is_published });
+      if (success) {
+        toast({
+          title: "Success",
+          description: `FAQ ${faq.is_published ? 'unpublished' : 'published'} successfully`
+        });
+      }
+    }
   };
 
-  const toggleOpen = (id: number) => {
+  const toggleOpen = (id: string) => {
     setOpenItems(prev => 
       prev.includes(id) 
         ? prev.filter(item => item !== id)
@@ -68,6 +59,10 @@ export function AdminFAQ() {
   };
 
   const categories = [...new Set(faqs.map(faq => faq.category))];
+
+  if (loading) {
+    return <div className="p-6">Loading FAQs...</div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -109,8 +104,8 @@ export function AdminFAQ() {
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <Badge variant="outline">{faq.category}</Badge>
-                        <Badge variant={faq.isPublished ? "default" : "secondary"}>
-                          {faq.isPublished ? "Published" : "Draft"}
+                        <Badge variant={faq.is_published ? "default" : "secondary"}>
+                          {faq.is_published ? "Published" : "Draft"}
                         </Badge>
                       </div>
                       <CollapsibleTrigger 
@@ -131,7 +126,7 @@ export function AdminFAQ() {
                         size="sm"
                         onClick={() => togglePublished(faq.id)}
                       >
-                        {faq.isPublished ? "Unpublish" : "Publish"}
+                        {faq.is_published ? "Unpublish" : "Publish"}
                       </Button>
                       <Button variant="outline" size="sm">
                         <Edit className="h-4 w-4" />
@@ -169,7 +164,7 @@ export function AdminFAQ() {
             <CardTitle>Published</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{faqs.filter(f => f.isPublished).length}</div>
+            <div className="text-2xl font-bold">{faqs.filter(f => f.is_published).length}</div>
             <p className="text-sm text-muted-foreground">Live on website</p>
           </CardContent>
         </Card>
@@ -189,7 +184,7 @@ export function AdminFAQ() {
             <CardTitle>Drafts</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{faqs.filter(f => !f.isPublished).length}</div>
+            <div className="text-2xl font-bold">{faqs.filter(f => !f.is_published).length}</div>
             <p className="text-sm text-muted-foreground">Unpublished items</p>
           </CardContent>
         </Card>
