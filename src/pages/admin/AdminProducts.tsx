@@ -9,10 +9,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAdmin } from "@/hooks/useAdmin";
-import { Package, Plus, Search, Edit, Trash2, X, Upload } from "lucide-react";
+import { Package, Plus, Search, Edit, Trash2, X, Upload, Download } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
+import { products as frontendProducts } from "@/data/products";
 
 interface ProductFormData {
   id: string;
@@ -162,6 +163,55 @@ export function AdminProducts() {
     setIsCreateDialogOpen(false);
   };
 
+  const importFrontendProducts = async () => {
+    try {
+      let importedCount = 0;
+      let skippedCount = 0;
+
+      for (const product of frontendProducts) {
+        try {
+          const productData = {
+            id: product.id,
+            name: product.name,
+            category: product.category.toLowerCase().replace(/\s+/g, '-'),
+            price: product.price,
+            original_price: product.originalPrice || 0,
+            description: product.description,
+            features: product.features,
+            capacity: product.capacity || "",
+            stock_quantity: 100, // Default stock
+            in_stock: product.inStock,
+            is_new: product.isNew || false,
+            is_featured: product.isFeatured || false,
+            image_url: product.image,
+            images: product.images,
+            specifications: product.specifications,
+          };
+
+          await createProduct(productData);
+          importedCount++;
+        } catch (error) {
+          console.error(`Error importing product ${product.id}:`, error);
+          skippedCount++;
+        }
+      }
+
+      toast({
+        title: "Import Complete",
+        description: `Successfully imported ${importedCount} products. Skipped ${skippedCount} products.`,
+      });
+
+      await loadProducts();
+    } catch (error) {
+      console.error('Error importing products:', error);
+      toast({
+        title: "Import Error",
+        description: "Failed to import frontend products",
+        variant: "destructive",
+      });
+    }
+  };
+
   const filteredProducts = products.filter(product =>
     product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     product.category?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -174,13 +224,18 @@ export function AdminProducts() {
           <h1 className="text-3xl font-bold tracking-tight">Products Management</h1>
           <p className="text-muted-foreground">Manage your product catalog</p>
         </div>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button onClick={importFrontendProducts} variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Import Frontend Products
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>{editingProduct ? 'Edit Product' : 'Create New Product'}</DialogTitle>
@@ -478,6 +533,7 @@ export function AdminProducts() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
