@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAdmin } from "@/hooks/useAdmin";
 import { Package, Plus, Search, Edit, Trash2, X, Upload, Download } from "lucide-react";
@@ -78,46 +79,69 @@ export function AdminProducts() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this product?')) {
-      try {
-        await deleteProduct(id);
-        await loadProducts();
-        toast({
-          title: "Success",
-          description: "Product deleted successfully",
-        });
-      } catch (error) {
-        console.error('Error deleting product:', error);
-        toast({
-          title: "Error",
-          description: "Failed to delete product",
-          variant: "destructive",
-        });
-      }
+  const handleDelete = async (id: string, productName: string) => {
+    try {
+      await deleteProduct(id);
+      await loadProducts();
+      toast({
+        title: "Success",
+        description: `Product "${productName}" deleted successfully`,
+      });
+    } catch (error) {
+      console.error('Error deleting product:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete product",
+        variant: "destructive",
+      });
     }
   };
 
   const handleCreateProduct = async (data: ProductFormData) => {
     try {
+      // Validate required fields
+      if (!data.id || !data.name || !data.category || !data.price) {
+        toast({
+          title: "Validation Error",
+          description: "Please fill in all required fields (ID, Name, Category, Price)",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Validate JSON specifications
+      let parsedSpecs = {};
+      if (data.specifications) {
+        try {
+          parsedSpecs = JSON.parse(data.specifications);
+        } catch (error) {
+          toast({
+            title: "Validation Error",
+            description: "Specifications must be valid JSON format",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
       const productData = {
         ...data,
         features: data.features.split('\n').filter(f => f.trim()),
         images: data.images.split('\n').filter(i => i.trim()),
-        specifications: data.specifications ? JSON.parse(data.specifications) : {},
+        specifications: parsedSpecs,
       };
 
       if (editingProduct) {
         await updateProduct(editingProduct.id, productData);
         toast({
           title: "Success",
-          description: "Product updated successfully",
+          description: `Product "${data.name}" updated successfully`,
         });
       } else {
         await createProduct(productData);
         toast({
           title: "Success",
-          description: "Product created successfully",
+          description: `Product "${data.name}" created successfully`,
         });
       }
 
@@ -127,9 +151,10 @@ export function AdminProducts() {
       await loadProducts();
     } catch (error) {
       console.error('Error saving product:', error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to save product";
       toast({
         title: "Error",
-        description: "Failed to save product",
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -252,9 +277,13 @@ export function AdminProducts() {
                     name="id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Product ID</FormLabel>
+                        <FormLabel>Product ID *</FormLabel>
                         <FormControl>
-                          <Input placeholder="unique-product-id" {...field} />
+                          <Input 
+                            placeholder="unique-product-id" 
+                            {...field} 
+                            disabled={!!editingProduct}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -266,7 +295,7 @@ export function AdminProducts() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Product Name</FormLabel>
+                        <FormLabel>Product Name *</FormLabel>
                         <FormControl>
                           <Input placeholder="Product name" {...field} />
                         </FormControl>
@@ -280,8 +309,8 @@ export function AdminProducts() {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Category *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select category" />
@@ -318,7 +347,7 @@ export function AdminProducts() {
                     name="price"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Price</FormLabel>
+                        <FormLabel>Price *</FormLabel>
                         <FormControl>
                           <Input 
                             type="number" 
@@ -589,9 +618,27 @@ export function AdminProducts() {
                     <Button variant="outline" size="sm" onClick={() => handleEditProduct(product)}>
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleDelete(product.id)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{product.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(product.id, product.name)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
