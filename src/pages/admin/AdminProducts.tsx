@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useAdmin } from "@/hooks/useAdmin";
-import { Package, Plus, Search, Edit, Trash2, X, Upload, Download } from "lucide-react";
+import { useProductManager } from "@/hooks/useProductManager";
+import { Package, Plus, Search, Edit, Trash2, X, Upload, Download, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
@@ -35,10 +36,22 @@ interface ProductFormData {
 }
 
 export function AdminProducts() {
-  const { getProducts, deleteProduct, createProduct, updateProduct } = useAdmin();
+  const { 
+    loading,
+    getProducts,
+    createProduct,
+    updateProduct,
+    deleteProduct,
+    importFromFrontend,
+    getProductStats,
+    getCategories
+  } = useProductManager();
+  
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [categories, setCategories] = useState<string[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const { toast } = useToast();
@@ -65,19 +78,44 @@ export function AdminProducts() {
 
   useEffect(() => {
     loadProducts();
+    loadStats();
+    loadCategories();
   }, []);
 
   const loadProducts = async () => {
     try {
-      setLoading(true);
-      const response = await getProducts({ page: 1, limit: 50 });
-      setProducts(response.products || []);
+      const data = await getProducts({
+        ...(selectedCategory && { category: selectedCategory }),
+        ...(searchTerm && { search: searchTerm }),
+      });
+      setProducts(data);
     } catch (error) {
       console.error('Error loading products:', error);
-    } finally {
-      setLoading(false);
     }
   };
+
+  const loadStats = async () => {
+    try {
+      const statsData = await getProductStats();
+      setStats(statsData);
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
+  const loadCategories = async () => {
+    try {
+      const categoriesData = await getCategories();
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
+  // Reload products when search or category changes
+  useEffect(() => {
+    loadProducts();
+  }, [searchTerm, selectedCategory]);
 
   const handleDelete = async (id: string, productName: string) => {
     try {
@@ -190,50 +228,11 @@ export function AdminProducts() {
 
   const importFrontendProducts = async () => {
     try {
-      let importedCount = 0;
-      let skippedCount = 0;
-
-      for (const product of frontendProducts) {
-        try {
-          const productData = {
-            id: product.id,
-            name: product.name,
-            category: product.category.toLowerCase().replace(/\s+/g, '-'),
-            price: product.price,
-            original_price: product.originalPrice || 0,
-            description: product.description,
-            features: product.features,
-            capacity: product.capacity || "",
-            stock_quantity: 100, // Default stock
-            in_stock: product.inStock,
-            is_new: product.isNew || false,
-            is_featured: product.isFeatured || false,
-            image_url: product.image,
-            images: product.images,
-            specifications: product.specifications,
-          };
-
-          await createProduct(productData);
-          importedCount++;
-        } catch (error) {
-          console.error(`Error importing product ${product.id}:`, error);
-          skippedCount++;
-        }
-      }
-
-      toast({
-        title: "Import Complete",
-        description: `Successfully imported ${importedCount} products. Skipped ${skippedCount} products.`,
-      });
-
+      await importFromFrontend(frontendProducts);
       await loadProducts();
+      await loadStats();
     } catch (error) {
       console.error('Error importing products:', error);
-      toast({
-        title: "Import Error",
-        description: "Failed to import frontend products",
-        variant: "destructive",
-      });
     }
   };
 
@@ -244,13 +243,14 @@ export function AdminProducts() {
 
   return (
     <div className="space-y-6">
+      {/* Header with Stats */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Products Management</h1>
           <p className="text-muted-foreground">Manage your product catalog</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={importFrontendProducts} variant="outline">
+          <Button onClick={importFrontendProducts} variant="outline" disabled={loading}>
             <Download className="h-4 w-4 mr-2" />
             Import Frontend Products
           </Button>
@@ -564,6 +564,74 @@ export function AdminProducts() {
         </Dialog>
         </div>
       </div>
+      
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Products</CardTitle>
+              <Package className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Stock</CardTitle>
+              <Package className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{stats.inStock}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Categories</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.categories}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Average Price</CardTitle>
+              <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">${stats.averagePrice.toFixed(2)}</div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search products..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="All Categories" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Categories</SelectItem>
+            {categories.map((category) => (
+              <SelectItem key={category} value={category}>
+                {category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <Card>
         <CardHeader>
@@ -574,15 +642,6 @@ export function AdminProducts() {
           <CardDescription>View and manage all products in your store</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2 mb-4">
-            <Search className="h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="max-w-sm"
-            />
-          </div>
 
           {loading ? (
             <div className="space-y-4">
