@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import Features from "@/components/Features";
 import { getFeaturedProducts, getNewProducts } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -86,59 +87,7 @@ const Index = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-16 bg-secondary/50">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {features.length > 0 ? features.map((feature) => {
-              const IconComponent = {
-                Shield, Truck, Headphones, Star
-              }[feature.icon] || Shield;
-              
-              return (
-                <div key={feature.id} className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                    <IconComponent className="h-8 w-8 text-brand-gold" />
-                  </div>
-                  <h3 className="text-lg font-semibold">{feature.title}</h3>
-                  <p className="text-muted-foreground">{feature.description}</p>
-                </div>
-              );
-            }) : (
-              // Fallback default features
-              <>
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                    <Shield className="h-8 w-8 text-brand-gold" />
-                  </div>
-                  <h3 className="text-lg font-semibold">Premium Quality</h3>
-                  <p className="text-muted-foreground">Durable materials and superior craftsmanship</p>
-                </div>
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                    <Truck className="h-8 w-8 text-brand-gold" />
-                  </div>
-                  <h3 className="text-lg font-semibold">Free Shipping</h3>
-                  <p className="text-muted-foreground">Free delivery on orders over $100</p>
-                </div>
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                    <Headphones className="h-8 w-8 text-brand-gold" />
-                  </div>
-                  <h3 className="text-lg font-semibold">24/7 Support</h3>
-                  <p className="text-muted-foreground">Expert customer service always available</p>
-                </div>
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                    <Star className="h-8 w-8 text-brand-gold" />
-                  </div>
-                  <h3 className="text-lg font-semibold">Warranty</h3>
-                  <p className="text-muted-foreground">Comprehensive product warranty coverage</p>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      </section>
+      <Features />
 
       {/* Featured Products */}
       <section className="py-16">
