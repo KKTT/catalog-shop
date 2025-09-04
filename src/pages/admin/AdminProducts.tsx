@@ -661,7 +661,7 @@ export function AdminProducts() {
               {filteredProducts.map((product) => (
                 <div key={product.id} className="flex items-center space-x-4 p-4 border rounded-lg">
                   <img
-                    src={product.image || '/placeholder.svg'}
+                    src={product.image_url || '/placeholder.svg'}
                     alt={product.name}
                     className="h-16 w-16 object-cover rounded"
                   />
