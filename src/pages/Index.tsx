@@ -7,15 +7,16 @@ import { Badge } from "@/components/ui/badge";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import Features from "@/components/Features";
-import { getFeaturedProducts, getNewProducts } from "@/data/products";
+import { useProductManager } from "@/hooks/useProductManager";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/contexts/AuthContext";
 import { useWebsiteContent } from "@/hooks/useWebsiteContent";
 
 const Index = () => {
-  const [featuredProducts] = useState(getFeaturedProducts());
-  const [newProducts] = useState(getNewProducts());
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+  const { getProducts } = useProductManager();
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
@@ -28,8 +29,23 @@ const Index = () => {
     loading: contentLoading 
   } = useWebsiteContent();
 
+  useEffect(() => {
+    const loadFeaturedProducts = async () => {
+      try {
+        const products = await getProducts({ isFeatured: true });
+        setFeaturedProducts(products.slice(0, 8)); // Show max 8 featured products
+      } catch (error) {
+        console.error('Error loading featured products:', error);
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    loadFeaturedProducts();
+  }, [getProducts]);
+
   const handleAddToCart = async (product: any) => {
-    const success = await addToCart(product.id, product.name, product.price, product.image);
+    const success = await addToCart(product.id, product.name, product.price, product.image_url);
     // No need for additional feedback - the cart hook handles this
   };
 
@@ -39,7 +55,7 @@ const Index = () => {
       const item = wishlistItems.find(item => item.product_id === product.id);
       if (item) await removeFromWishlist(item.id);
     } else {
-      await addToWishlist(product.id, product.name, product.price, product.image);
+      await addToWishlist(product.id, product.name, product.price, product.image_url);
     }
   };
 
@@ -97,80 +113,95 @@ const Index = () => {
             <p className="text-xl text-muted-foreground">Discover our most popular outdoor gear</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20">
-                <CardHeader className="p-0">
-                  <div className="relative overflow-hidden rounded-t-lg">
-                    <img 
-                      src={product.image} 
-                      alt={product.name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    {product.isNew && (
-                      <Badge className="absolute top-2 left-2 bg-brand-gold text-brand-dark">
-                        New
-                      </Badge>
-                    )}
-                    <div className="absolute top-2 right-2 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button 
-                        size="icon" 
-                        variant="secondary" 
-                        className="bg-white/90 hover:bg-white"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleWishlistToggle(product);
-                        }}
-                      >
-                        <Heart 
-                          className={`h-4 w-4 ${
-                            user && wishlistItems.some(item => item.product_id === product.id) 
-                              ? 'fill-red-500 text-red-500' 
-                              : ''
-                          }`} 
-                        />
-                      </Button>
-                      <Button size="icon" variant="secondary" className="bg-white/90 hover:bg-white" asChild>
-                        <Link to={`/product/${product.id}`}>
-                          <Search className="h-4 w-4" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="space-y-2">
-                    <h3 className="font-semibold text-lg line-clamp-2">{product.name}</h3>
-                    <div className="flex items-center space-x-1">
-                      {[...Array(5)].map((_, i) => (
-                        <Star 
-                          key={i} 
-                          className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-brand-gold fill-current' : 'text-gray-300'}`} 
-                        />
-                      ))}
-                      <span className="text-sm text-muted-foreground">({product.reviews})</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-2xl font-bold text-brand-gold">${product.price}</span>
-                      {product.originalPrice && (
-                        <span className="text-lg text-muted-foreground line-through">${product.originalPrice}</span>
+          {productsLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[...Array(8)].map((_, i) => (
+                <Card key={i} className="animate-pulse">
+                  <div className="h-48 bg-gray-300 rounded-t-lg"></div>
+                  <CardContent className="p-4">
+                    <div className="h-4 bg-gray-300 rounded mb-2"></div>
+                    <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                    <div className="h-6 bg-gray-300 rounded w-1/2"></div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {featuredProducts.map((product) => (
+                <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20">
+                  <CardHeader className="p-0">
+                    <div className="relative overflow-hidden rounded-t-lg">
+                      <img 
+                        src={product.image_url || "/placeholder.svg?height=400&width=400"} 
+                        alt={product.name}
+                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      {product.is_new && (
+                        <Badge className="absolute top-2 left-2 bg-brand-gold text-brand-dark">
+                          New
+                        </Badge>
                       )}
+                      <div className="absolute top-2 right-2 space-y-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          size="icon" 
+                          variant="secondary" 
+                          className="bg-white/90 hover:bg-white"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleWishlistToggle(product);
+                          }}
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              user && wishlistItems.some(item => item.product_id === product.id) 
+                                ? 'fill-red-500 text-red-500' 
+                                : ''
+                            }`} 
+                          />
+                        </Button>
+                        <Button size="icon" variant="secondary" className="bg-white/90 hover:bg-white" asChild>
+                          <Link to={`/product/${product.id}`}>
+                            <Search className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="p-4 pt-0">
-                  <Button 
-                    className="w-full bg-brand-dark hover:bg-brand-accent text-white"
-                    onClick={() => handleAddToCart(product)}
-                  >
-                    <ShoppingCart className="mr-2 h-4 w-4" />
-                    Add to Cart
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-2">
+                      <h3 className="font-semibold text-lg line-clamp-2">{product.name}</h3>
+                      <div className="flex items-center space-x-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star 
+                            key={i} 
+                            className={`h-4 w-4 ${i < Math.floor(product.rating) ? 'text-brand-gold fill-current' : 'text-gray-300'}`} 
+                          />
+                        ))}
+                        <span className="text-sm text-muted-foreground">({product.reviews})</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-2xl font-bold text-brand-gold">${product.price}</span>
+                        {product.original_price && (
+                          <span className="text-lg text-muted-foreground line-through">${product.original_price}</span>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="p-4 pt-0">
+                    <Button 
+                      className="w-full bg-brand-dark hover:bg-brand-accent text-white"
+                      onClick={() => handleAddToCart(product)}
+                    >
+                      <ShoppingCart className="mr-2 h-4 w-4" />
+                      Add to Cart
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+          )}
           
           <div className="text-center mt-12">
             <Link to="/products">
