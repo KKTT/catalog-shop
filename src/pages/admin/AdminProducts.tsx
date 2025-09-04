@@ -50,7 +50,7 @@ export function AdminProducts() {
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [categories, setCategories] = useState<string[]>([]);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -85,7 +85,7 @@ export function AdminProducts() {
   const loadProducts = async () => {
     try {
       const data = await getProducts({
-        ...(selectedCategory && { category: selectedCategory }),
+        ...(selectedCategory && selectedCategory !== "all" && { category: selectedCategory }),
         ...(searchTerm && { search: searchTerm }),
       });
       setProducts(data);
@@ -623,7 +623,7 @@ export function AdminProducts() {
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Categories</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
             {categories.map((category) => (
               <SelectItem key={category} value={category}>
                 {category.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
