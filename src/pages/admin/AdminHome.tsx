@@ -6,8 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useWebsiteContent } from "@/hooks/useWebsiteContent";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Edit, RefreshCw } from "lucide-react";
+import { Save, Edit, RefreshCw, Upload, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
 
 export function AdminHome() {
   const [isEditing, setIsEditing] = useState(false);
@@ -29,7 +30,8 @@ export function AdminHome() {
     subtitle: '',
     description: '',
     primary_button_text: 'Shop Now',
-    secondary_button_text: 'View Catalog'
+    secondary_button_text: 'View Catalog',
+    hero_image_url: ''
   });
 
   const [companyData, setCompanyData] = useState({
@@ -41,6 +43,8 @@ export function AdminHome() {
     company_story: ''
   });
 
+  const [uploadingImage, setUploadingImage] = useState(false);
+
   useEffect(() => {
     if (heroContent) {
       setHeroData({
@@ -48,7 +52,8 @@ export function AdminHome() {
         subtitle: heroContent.subtitle || '',
         description: heroContent.description || '',
         primary_button_text: heroContent.primary_button_text || 'Shop Now',
-        secondary_button_text: heroContent.secondary_button_text || 'View Catalog'
+        secondary_button_text: heroContent.secondary_button_text || 'View Catalog',
+        hero_image_url: heroContent.hero_image_url || ''
       });
     }
   }, [heroContent]);
@@ -65,6 +70,46 @@ export function AdminHome() {
       });
     }
   }, [companyContent]);
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadingImage(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `hero-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('image')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data } = supabase.storage
+        .from('image')
+        .getPublicUrl(filePath);
+
+      setHeroData(prev => ({ ...prev, hero_image_url: data.publicUrl }));
+      
+      toast({
+        title: "Success",
+        description: "Hero image uploaded successfully!",
+      });
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to upload image. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -204,6 +249,65 @@ export function AdminHome() {
                 placeholder="Enter hero description"
                 rows={3}
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="hero-image">Hero Image</Label>
+              <div className="space-y-4">
+                {heroData.hero_image_url && (
+                  <div className="relative">
+                    <img 
+                      src={heroData.hero_image_url} 
+                      alt="Hero preview" 
+                      className="w-full h-48 object-cover rounded-lg border"
+                    />
+                    {isEditing && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => setHeroData(prev => ({ ...prev, hero_image_url: '' }))}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                )}
+                
+                {isEditing && (
+                  <div className="flex items-center gap-4">
+                    <Input
+                      id="hero-image-url"
+                      value={heroData.hero_image_url}
+                      onChange={(e) => setHeroData(prev => ({ ...prev, hero_image_url: e.target.value }))}
+                      placeholder="Enter image URL or upload below"
+                    />
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="sr-only"
+                        id="hero-image-upload"
+                        disabled={uploadingImage}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={uploadingImage}
+                        onClick={() => document.getElementById('hero-image-upload')?.click()}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        {uploadingImage ? 'Uploading...' : 'Upload'}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                
+                {!isEditing && !heroData.hero_image_url && (
+                  <p className="text-sm text-muted-foreground">No hero image set</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
