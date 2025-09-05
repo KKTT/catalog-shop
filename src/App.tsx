@@ -28,6 +28,8 @@ import { AdminBlog } from "./pages/admin/AdminBlog";
 import { AdminTestimonials } from "./pages/admin/AdminTestimonials";
 import { AdminFAQ } from "./pages/admin/AdminFAQ";
 import { AdminContact } from "./pages/admin/AdminContact";
+import { AdminCategories } from "./pages/admin/AdminCategories";
+import CategoryProducts from "./pages/CategoryProducts";
 
 const queryClient = new QueryClient();
 
@@ -41,7 +43,8 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/products" element={<Products />} />
-            <Route path="/products/:id" element={<ProductDetail />} />
+            <Route path="/products/:category" element={<CategoryProducts />} />
+            <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/about" element={<About />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/testimonials" element={<Testimonials />} />
@@ -62,6 +65,7 @@ const App = () => (
               <Route path="testimonials" element={<AdminTestimonials />} />
               <Route path="faq" element={<AdminFAQ />} />
               <Route path="contact" element={<AdminContact />} />
+              <Route path="categories" element={<AdminCategories />} />
               <Route path="orders" element={<div>Admin Orders - Coming Soon</div>} />
               <Route path="users" element={<div>Admin Users - Coming Soon</div>} />
               <Route path="admin-users" element={<div>Admin User Management - Coming Soon</div>} />
