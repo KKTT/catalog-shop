@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, ShoppingCart, Search, Star } from "lucide-react";
+import { ArrowLeft, Heart, ShoppingCart, Search, Star, Filter, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useProductManager } from "@/hooks/useProductManager";
@@ -14,7 +17,11 @@ import { useAuth } from "@/contexts/AuthContext";
 const CategoryProducts = () => {
   const { category } = useParams();
   const [products, setProducts] = useState([]);
+  const [filteredProducts, setFilteredProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState("name");
+  const [priceRange, setPriceRange] = useState([0, 1000]);
+  const [showOnlyInStock, setShowOnlyInStock] = useState(false);
   const { getProducts } = useProductManager();
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
@@ -43,6 +50,7 @@ const CategoryProducts = () => {
           (category === 'travel' && (product.category?.toLowerCase().includes('travel') || product.category?.toLowerCase().includes('hunting')))
         );
         setProducts(filteredProducts);
+        setFilteredProducts(filteredProducts);
       } catch (error) {
         console.error('Error loading category products:', error);
       } finally {
@@ -54,6 +62,40 @@ const CategoryProducts = () => {
       loadCategoryProducts();
     }
   }, [category, getProducts]);
+
+  // Filter and sort products
+  useEffect(() => {
+    let filtered = [...products];
+
+    // Filter by price range
+    filtered = filtered.filter(product => 
+      product.price >= priceRange[0] && product.price <= priceRange[1]
+    );
+
+    // Filter by stock status
+    if (showOnlyInStock) {
+      filtered = filtered.filter(product => product.in_stock);
+    }
+
+    // Sort products
+    filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "price-low":
+          return a.price - b.price;
+        case "price-high":
+          return b.price - a.price;
+        case "rating":
+          return b.rating - a.rating;
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "name":
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    setFilteredProducts(filtered);
+  }, [products, sortBy, priceRange, showOnlyInStock]);
 
   const handleAddToCart = async (product: any) => {
     await addToCart(product.id, product.name, product.price, product.image_url);
@@ -111,14 +153,96 @@ const CategoryProducts = () => {
             </div>
           ) : products.length > 0 ? (
             <>
-              <div className="flex justify-between items-center mb-8">
+              {/* Filter and Sort Bar */}
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <h2 className="text-2xl font-bold">
-                  {products.length} Product{products.length !== 1 ? 's' : ''} Found
+                  {filteredProducts.length} Product{filteredProducts.length !== 1 ? 's' : ''} Found
                 </h2>
+                
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Sort by:</span>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="name">Name (A-Z)</SelectItem>
+                        <SelectItem value="price-low">Price (Low to High)</SelectItem>
+                        <SelectItem value="price-high">Price (High to Low)</SelectItem>
+                        <SelectItem value="rating">Rating</SelectItem>
+                        <SelectItem value="newest">Newest</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Filter Button */}
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" className="gap-2">
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Filters
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent>
+                      <SheetHeader>
+                        <SheetTitle>Filter Products</SheetTitle>
+                      </SheetHeader>
+                      
+                      <div className="space-y-6 mt-6">
+                        {/* Price Range */}
+                        <div>
+                          <h4 className="font-medium mb-3">Price Range</h4>
+                          <div className="space-y-3">
+                            <Slider
+                              value={priceRange}
+                              onValueChange={setPriceRange}
+                              max={1000}
+                              min={0}
+                              step={10}
+                              className="w-full"
+                            />
+                            <div className="flex justify-between text-sm text-muted-foreground">
+                              <span>${priceRange[0]}</span>
+                              <span>${priceRange[1]}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Stock Status */}
+                        <div>
+                          <label className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              checked={showOnlyInStock}
+                              onChange={(e) => setShowOnlyInStock(e.target.checked)}
+                              className="rounded border-gray-300"
+                            />
+                            <span className="text-sm font-medium">In Stock Only</span>
+                          </label>
+                        </div>
+
+                        {/* Reset Filters */}
+                        <Button 
+                          variant="outline" 
+                          onClick={() => {
+                            setPriceRange([0, 1000]);
+                            setShowOnlyInStock(false);
+                            setSortBy("name");
+                          }}
+                          className="w-full"
+                        >
+                          Reset Filters
+                        </Button>
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20">
                     <CardHeader className="p-0">
                       <div className="relative overflow-hidden rounded-t-lg">

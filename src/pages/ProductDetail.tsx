@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { ProductImageGallery } from "@/components/ProductImageGallery";
 import { getProductById, products } from "@/data/products";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
@@ -16,7 +17,6 @@ import { useToast } from "@/hooks/use-toast";
 const ProductDetail = () => {
   const { id } = useParams();
   const product = getProductById(id || "");
-  const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   
   const { addToCart } = useCart();
@@ -79,38 +79,13 @@ const ProductDetail = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
-          <div className="space-y-4">
-            <div className="relative overflow-hidden rounded-lg bg-gray-100">
-              <img 
-                src={product.images[selectedImage]} 
-                alt={product.name}
-                className="w-full h-96 object-cover"
-              />
-              {product.isNew && (
-                <Badge className="absolute top-4 left-4 bg-brand-gold text-brand-dark">
-                  New
-                </Badge>
-              )}
-            </div>
-            
-            {/* Thumbnail Images - Always show all available images */}
-            <div className="flex space-x-2 overflow-x-auto">
-              {product.images.map((image, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(index)}
-                  className={`relative overflow-hidden rounded-md border-2 transition-colors flex-shrink-0 ${
-                    selectedImage === index ? 'border-brand-gold' : 'border-transparent hover:border-gray-300'
-                  }`}
-                >
-                  <img 
-                    src={image} 
-                    alt={`${product.name} ${index + 1}`}
-                    className="w-20 h-20 object-cover"
-                  />
-                </button>
-              ))}
-            </div>
+          <div className="relative">
+            <ProductImageGallery images={product.images} productName={product.name} />
+            {product.isNew && (
+              <Badge className="absolute top-4 left-4 bg-brand-gold text-brand-dark z-10">
+                New
+              </Badge>
+            )}
           </div>
 
           {/* Product Info */}
