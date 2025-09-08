@@ -19,10 +19,9 @@ const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   
-  const { getProduct, getProducts } = useProductManager();
+  const { getProduct, getProducts, loading } = useProductManager();
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
@@ -32,12 +31,10 @@ const ProductDetail = () => {
     const loadProduct = async () => {
       if (!id) {
         console.error('No product ID provided');
-        setLoading(false);
         return;
       }
       
       try {
-        setLoading(true);
         console.log('Loading product with ID:', id);
         const productData = await getProduct(id);
         console.log('Product data received:', productData);
@@ -57,8 +54,6 @@ const ProductDetail = () => {
       } catch (error) {
         console.error('Error loading product:', error);
         setProduct(null);
-      } finally {
-        setLoading(false);
       }
     };
 
