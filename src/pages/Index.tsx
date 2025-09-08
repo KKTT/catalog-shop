@@ -129,7 +129,8 @@ const Index = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {featuredProducts.map((product) => (
-                <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20">
+                <Card key={product.id} className="group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20 cursor-pointer"
+                      onClick={() => window.location.href = `/product/${product.id}`}>
                   <CardHeader className="p-0">
                     <div className="relative overflow-hidden rounded-t-lg">
                       <img 

@@ -218,9 +218,10 @@ const Products = () => {
             : "space-y-6"
         }`}>
           {sortedProducts.map((product) => (
-            <Card key={product.id} className={`group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20 ${
+            <Card key={product.id} className={`group hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20 cursor-pointer ${
               viewMode === "list" ? "flex flex-col md:flex-row" : ""
-            }`}>
+            }`}
+                  onClick={() => window.location.href = `/product/${product.id}`}>
               <CardHeader className={`p-0 ${viewMode === "list" ? "md:w-1/3" : ""}`}>
                 <div className="relative overflow-hidden rounded-t-lg md:rounded-l-lg md:rounded-tr-none">
                   <img 
