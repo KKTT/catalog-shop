@@ -30,11 +30,18 @@ const ProductDetail = () => {
 
   useEffect(() => {
     const loadProduct = async () => {
-      if (!id) return;
+      if (!id) {
+        console.error('No product ID provided');
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
+        console.log('Loading product with ID:', id);
         const productData = await getProduct(id);
+        console.log('Product data received:', productData);
+        
         if (productData) {
           setProduct(productData);
           
@@ -44,9 +51,12 @@ const ProductDetail = () => {
             .filter(p => p.category === productData.category && p.id !== productData.id)
             .slice(0, 4);
           setRelatedProducts(related);
+        } else {
+          console.error('No product found with ID:', id);
         }
       } catch (error) {
         console.error('Error loading product:', error);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -82,13 +92,14 @@ const ProductDetail = () => {
     );
   }
 
-  if (!product) {
+  if (!product && !loading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Product Not Found</h1>
-          <p className="text-muted-foreground mb-8">The product you're looking for doesn't exist.</p>
+          <p className="text-muted-foreground mb-4">The product with ID "{id}" doesn't exist.</p>
+          <p className="text-sm text-muted-foreground mb-8">Please check the URL or browse our available products.</p>
           <Link to="/products">
             <Button className="bg-brand-gold text-brand-dark hover:bg-brand-gold/90">
               Browse All Products
