@@ -262,6 +262,8 @@ export type Database = {
           created_at: string
           id: string
           is_default: boolean | null
+          map_link: string | null
+          phone_number: string | null
           postal_code: string | null
           state: string | null
           updated_at: string
@@ -274,6 +276,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean | null
+          map_link?: string | null
+          phone_number?: string | null
           postal_code?: string | null
           state?: string | null
           updated_at?: string
@@ -286,6 +290,8 @@ export type Database = {
           created_at?: string
           id?: string
           is_default?: boolean | null
+          map_link?: string | null
+          phone_number?: string | null
           postal_code?: string | null
           state?: string | null
           updated_at?: string
