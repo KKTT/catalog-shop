@@ -14,14 +14,16 @@ import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { products as staticProducts, getProductById } from "@/data/products";
 
 const ProductDetail = () => {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   
-  const { getProduct, getProducts, loading } = useProductManager();
+  const { getProduct, getProducts } = useProductManager();
   const { addToCart } = useCart();
   const { wishlistItems, addToWishlist, removeFromWishlist } = useWishlist();
   const { user } = useAuth();
@@ -31,8 +33,11 @@ const ProductDetail = () => {
     const loadProduct = async () => {
       if (!id) {
         console.error('No product ID provided');
+        setLoading(false);
         return;
       }
+      
+      setLoading(true);
       
       try {
         console.log('Loading product with ID:', id);
@@ -49,16 +54,81 @@ const ProductDetail = () => {
             .slice(0, 4);
           setRelatedProducts(related);
         } else {
-          console.error('No product found with ID:', id);
+          // Fallback to static data
+          console.log('Falling back to static data');
+          const staticProduct = getProductById(id);
+          if (staticProduct) {
+            const mappedProduct = {
+              id: staticProduct.id,
+              name: staticProduct.name,
+              category: staticProduct.category,
+              price: staticProduct.price,
+              original_price: staticProduct.originalPrice,
+              description: staticProduct.description,
+              features: staticProduct.features,
+              capacity: staticProduct.capacity,
+              in_stock: staticProduct.inStock,
+              is_new: staticProduct.isNew,
+              is_featured: staticProduct.isFeatured,
+              image_url: staticProduct.image,
+              images: staticProduct.images,
+              specifications: staticProduct.specifications,
+              rating: staticProduct.rating,
+              reviews: staticProduct.reviews,
+            };
+            setProduct(mappedProduct);
+            
+            // Load related static products
+            const relatedStatic = staticProducts
+              .filter(p => p.category === staticProduct.category && p.id !== staticProduct.id)
+              .slice(0, 4)
+              .map(p => ({
+                id: p.id,
+                name: p.name,
+                category: p.category,
+                price: p.price,
+                image_url: p.image,
+                rating: p.rating,
+              }));
+            setRelatedProducts(relatedStatic);
+          } else {
+            console.error('No product found with ID:', id);
+          }
         }
       } catch (error) {
         console.error('Error loading product:', error);
-        setProduct(null);
+        // Fallback to static data on error
+        const staticProduct = getProductById(id);
+        if (staticProduct) {
+          const mappedProduct = {
+            id: staticProduct.id,
+            name: staticProduct.name,
+            category: staticProduct.category,
+            price: staticProduct.price,
+            original_price: staticProduct.originalPrice,
+            description: staticProduct.description,
+            features: staticProduct.features,
+            capacity: staticProduct.capacity,
+            in_stock: staticProduct.inStock,
+            is_new: staticProduct.isNew,
+            is_featured: staticProduct.isFeatured,
+            image_url: staticProduct.image,
+            images: staticProduct.images,
+            specifications: staticProduct.specifications,
+            rating: staticProduct.rating,
+            reviews: staticProduct.reviews,
+          };
+          setProduct(mappedProduct);
+        } else {
+          setProduct(null);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
     loadProduct();
-  }, [id, getProduct, getProducts]);
+  }, [id]);
 
   if (loading) {
     return (
