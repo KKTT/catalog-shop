@@ -79,6 +79,7 @@ const statusConfig = {
   confirmed: { label: "Confirmed", color: "bg-blue-500/10 text-blue-600 border-blue-500/20" },
   shipping: { label: "Shipping", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },
   delivered: { label: "Delivered", color: "bg-green-500/10 text-green-600 border-green-500/20" },
+  complete: { label: "Complete", color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
   cancelled: { label: "Cancelled", color: "bg-red-500/10 text-red-600 border-red-500/20" },
   return_requested: { label: "Return Requested", color: "bg-orange-500/10 text-orange-600 border-orange-500/20" },
 };
@@ -254,114 +255,233 @@ export function AdminOrders() {
     confirmed: orders.filter(o => o.status === "confirmed").length,
     shipping: orders.filter(o => o.status === "shipping").length,
     delivered: orders.filter(o => o.status === "delivered").length,
+    complete: orders.filter(o => o.status === "complete").length,
     monitoring: orders.filter(o => ["pending", "confirmed", "shipping"].includes(o.status)).length,
     return: orders.filter(o => o.status === "return_requested").length,
   };
 
-  const OrdersTable = ({ filteredOrders, showActions = true }: { filteredOrders: Order[], showActions?: boolean }) => (
-    <div className="rounded-lg border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="w-[120px]">Order ID</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Items</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Date</TableHead>
-            {showActions && <TableHead className="text-right">Actions</TableHead>}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredOrders.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={showActions ? 7 : 6} className="text-center py-12">
-                <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                  <ShoppingBag className="h-12 w-12 opacity-50" />
-                  <p>No orders found</p>
-                </div>
-              </TableCell>
+  const OrdersTable = ({ 
+    filteredOrders, 
+    showActions = true,
+    tabContext = "drive" 
+  }: { 
+    filteredOrders: Order[], 
+    showActions?: boolean,
+    tabContext?: string 
+  }) => {
+    const getContextualActions = (order: Order) => {
+      switch (tabContext) {
+        case "new":
+          return (
+            <>
+              <DropdownMenuItem onClick={() => handleViewDetails(order)}>
+                <Eye className="h-4 w-4 mr-2" />
+                Review Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Invoice
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleStatusUpdate(order.id, "confirmed")}
+                className="text-green-600"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Confirm Order
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleStatusUpdate(order.id, "cancelled")}
+                className="text-red-600"
+              >
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Reject Order
+              </DropdownMenuItem>
+            </>
+          );
+        case "confirmed":
+          return (
+            <>
+              <DropdownMenuItem onClick={() => handleViewDetails(order)}>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Invoice
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleStatusUpdate(order.id, "shipping")}
+                className="text-purple-600"
+              >
+                <Truck className="h-4 w-4 mr-2" />
+                Start Shipping
+              </DropdownMenuItem>
+            </>
+          );
+        case "shipping":
+          return (
+            <>
+              <DropdownMenuItem onClick={() => handleViewDetails(order)}>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Invoice
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleStatusUpdate(order.id, "delivered")}
+                className="text-green-600"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                Mark as Delivered
+              </DropdownMenuItem>
+            </>
+          );
+        case "delivered":
+          return (
+            <>
+              <DropdownMenuItem onClick={() => handleViewDetails(order)}>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Invoice
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => handleStatusUpdate(order.id, "complete")}
+                className="text-emerald-600"
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Mark Complete
+              </DropdownMenuItem>
+            </>
+          );
+        default:
+          return (
+            <>
+              <DropdownMenuItem onClick={() => handleViewDetails(order)}>
+                <Eye className="h-4 w-4 mr-2" />
+                View Details
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                <Printer className="h-4 w-4 mr-2" />
+                Print Invoice
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              {order.status === "pending" && (
+                <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "confirmed")}>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Confirm Order
+                </DropdownMenuItem>
+              )}
+              {order.status === "confirmed" && (
+                <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "shipping")}>
+                  <Truck className="h-4 w-4 mr-2" />
+                  Mark as Shipping
+                </DropdownMenuItem>
+              )}
+              {order.status === "shipping" && (
+                <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "delivered")}>
+                  <Package className="h-4 w-4 mr-2" />
+                  Mark as Delivered
+                </DropdownMenuItem>
+              )}
+              {order.status === "delivered" && (
+                <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "complete")}>
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Mark Complete
+                </DropdownMenuItem>
+              )}
+            </>
+          );
+      }
+    };
+
+    return (
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50">
+              <TableHead className="w-[120px]">Order ID</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Items</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Date</TableHead>
+              {showActions && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
-          ) : (
-            filteredOrders.map((order) => (
-              <TableRow key={order.id} className="hover:bg-muted/30">
-                <TableCell className="font-mono text-sm">
-                  #{order.id.slice(0, 8)}
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-col">
-                    <span className="font-medium">{order.profiles?.full_name || "Guest"}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {order.delivery_addresses?.phone_number || "N/A"}
-                    </span>
+          </TableHeader>
+          <TableBody>
+            {filteredOrders.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={showActions ? 7 : 6} className="text-center py-12">
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <ShoppingBag className="h-12 w-12 opacity-50" />
+                    <p>No orders found</p>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <span className="text-sm">
-                    {order.order_items?.length || 0} item(s)
-                  </span>
-                </TableCell>
-                <TableCell className="text-right font-semibold">
-                  ${order.total_amount.toFixed(2)}
-                </TableCell>
-                <TableCell>
-                  <Badge 
-                    variant="outline" 
-                    className={statusConfig[order.status as keyof typeof statusConfig]?.color || ""}
-                  >
-                    {statusConfig[order.status as keyof typeof statusConfig]?.label || order.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">
-                  {format(new Date(order.created_at), "MMM dd, yyyy")}
-                </TableCell>
-                {showActions && (
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewDetails(order)}>
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
-                          <Printer className="h-4 w-4 mr-2" />
-                          Print Invoice
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {order.status === "pending" && (
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "confirmed")}>
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Confirm Order
-                          </DropdownMenuItem>
-                        )}
-                        {order.status === "confirmed" && (
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "shipping")}>
-                            <Truck className="h-4 w-4 mr-2" />
-                            Mark as Shipping
-                          </DropdownMenuItem>
-                        )}
-                        {order.status === "shipping" && (
-                          <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "delivered")}>
-                            <Package className="h-4 w-4 mr-2" />
-                            Mark as Delivered
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                )}
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-    </div>
-  );
+            ) : (
+              filteredOrders.map((order) => (
+                <TableRow key={order.id} className="hover:bg-muted/30">
+                  <TableCell className="font-mono text-sm">
+                    #{order.id.slice(0, 8)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{order.profiles?.full_name || "Guest"}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {order.delivery_addresses?.phone_number || "N/A"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm">
+                      {order.order_items?.length || 0} item(s)
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right font-semibold">
+                    ${order.total_amount.toFixed(2)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge 
+                      variant="outline" 
+                      className={statusConfig[order.status as keyof typeof statusConfig]?.color || ""}
+                    >
+                      {statusConfig[order.status as keyof typeof statusConfig]?.label || order.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {format(new Date(order.created_at), "MMM dd, yyyy")}
+                  </TableCell>
+                  {showActions && (
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {getContextualActions(order)}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
+    );
+  };
 
   const StatCard = ({ title, value, icon: Icon, color }: { title: string; value: number; icon: any; color: string }) => (
     <Card className="border-0 shadow-sm">
@@ -518,6 +638,12 @@ export function AdminOrders() {
                     Mark as Delivered
                   </Button>
                 )}
+                {selectedOrder.status === "delivered" && (
+                  <Button onClick={() => { handleStatusUpdate(selectedOrder.id, "complete"); setDetailDialogOpen(false); }}>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Mark Complete
+                  </Button>
+                )}
               </div>
             </div>
           )}
@@ -628,7 +754,7 @@ export function AdminOrders() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">New Orders</CardTitle>
-              <CardDescription>Orders pending confirmation</CardDescription>
+              <CardDescription>Review order details and confirm or reject orders</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -636,7 +762,7 @@ export function AdminOrders() {
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <OrdersTable filteredOrders={filterOrdersByStatus(["pending"])} />
+                <OrdersTable filteredOrders={filterOrdersByStatus(["pending"])} tabContext="new" />
               )}
             </CardContent>
           </Card>
@@ -647,7 +773,7 @@ export function AdminOrders() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Confirmed Orders</CardTitle>
-              <CardDescription>Orders confirmed and ready for shipping</CardDescription>
+              <CardDescription>Manage orders ready for shipping</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -655,7 +781,7 @@ export function AdminOrders() {
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <OrdersTable filteredOrders={filterOrdersByStatus(["confirmed"])} />
+                <OrdersTable filteredOrders={filterOrdersByStatus(["confirmed"])} tabContext="confirmed" />
               )}
             </CardContent>
           </Card>
@@ -665,8 +791,8 @@ export function AdminOrders() {
         <TabsContent value="shipping" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Shipping Orders</CardTitle>
-              <CardDescription>Orders currently being delivered</CardDescription>
+              <CardTitle className="text-lg">Shipping List</CardTitle>
+              <CardDescription>Track orders in transit and manage deliveries</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -674,7 +800,7 @@ export function AdminOrders() {
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <OrdersTable filteredOrders={filterOrdersByStatus(["shipping"])} />
+                <OrdersTable filteredOrders={filterOrdersByStatus(["shipping"])} tabContext="shipping" />
               )}
             </CardContent>
           </Card>
@@ -685,7 +811,7 @@ export function AdminOrders() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Delivered Orders</CardTitle>
-              <CardDescription>Successfully delivered orders</CardDescription>
+              <CardDescription>Verify completed deliveries and mark orders as complete</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -693,7 +819,7 @@ export function AdminOrders() {
                   <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
                 </div>
               ) : (
-                <OrdersTable filteredOrders={filterOrdersByStatus(["delivered"])} />
+                <OrdersTable filteredOrders={filterOrdersByStatus(["delivered"])} tabContext="delivered" />
               )}
             </CardContent>
           </Card>
