@@ -56,7 +56,6 @@ Deno.serve(async (req) => {
         .from('orders')
         .select(`
           *,
-          profiles:user_id(full_name),
           delivery_addresses(*),
           order_items(*)
         `, { count: 'exact' })
@@ -77,9 +76,22 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Fetch profile names for each order
+      const userIds = [...new Set(orders?.map(o => o.user_id) || [])];
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      // Map profiles to orders
+      const ordersWithProfiles = orders?.map(order => ({
+        ...order,
+        profiles: profiles?.find(p => p.user_id === order.user_id) || null
+      }));
+
       return new Response(
         JSON.stringify({ 
-          orders, 
+          orders: ordersWithProfiles, 
           total: count, 
           page, 
           limit,
