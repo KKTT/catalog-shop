@@ -1,9 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   Truck, 
   Package, 
@@ -16,7 +23,11 @@ import {
   MoreVertical,
   Eye,
   RefreshCw,
-  ShoppingBag
+  ShoppingBag,
+  Printer,
+  MapPin,
+  Phone,
+  User
 } from "lucide-react";
 import {
   Table,
@@ -30,11 +41,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { Separator } from "@/components/ui/separator";
 
 interface Order {
   id: string;
@@ -45,12 +58,13 @@ interface Order {
   updated_at: string;
   delivery_fee?: number;
   delivery_address_id?: string;
-  profiles?: { full_name: string | null };
+  profiles?: { full_name: string | null; user_id: string };
   delivery_addresses?: {
     address_line: string;
     city?: string;
     phone_number?: string;
-  };
+    map_link?: string;
+  } | null;
   order_items?: {
     id: string;
     product_name: string;
@@ -74,6 +88,9 @@ export function AdminOrders() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("drive");
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
   const { getOrders, updateOrderStatus } = useAdmin();
 
   const fetchOrders = async () => {
@@ -101,8 +118,124 @@ export function AdminOrders() {
       toast.success(`Order status updated to ${newStatus}`);
       fetchOrders();
     } catch (error) {
+      console.error("Status update error:", error);
       toast.error("Failed to update order status");
     }
+  };
+
+  const handleViewDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setDetailDialogOpen(true);
+  };
+
+  const handlePrintInvoice = (order: Order) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      toast.error("Please allow popups for this site to print invoices");
+      return;
+    }
+
+    const itemsTotal = order.order_items?.reduce((sum, item) => sum + (item.price * item.quantity), 0) || 0;
+    const deliveryFee = order.delivery_fee || 5;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Invoice - #${order.id.slice(0, 8)}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+          .header h1 { font-size: 28px; margin-bottom: 5px; }
+          .header p { color: #666; }
+          .invoice-info { display: flex; justify-content: space-between; margin-bottom: 30px; }
+          .invoice-info div { flex: 1; }
+          .invoice-info h3 { font-size: 14px; color: #666; margin-bottom: 8px; }
+          .invoice-info p { font-size: 14px; line-height: 1.6; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+          th { background-color: #f8f8f8; font-weight: 600; }
+          .text-right { text-align: right; }
+          .totals { margin-left: auto; width: 300px; }
+          .totals div { display: flex; justify-content: space-between; padding: 8px 0; }
+          .totals .total { border-top: 2px solid #333; font-weight: bold; font-size: 18px; margin-top: 10px; padding-top: 10px; }
+          .footer { text-align: center; margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+          .status { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; background: #e3f2fd; color: #1976d2; }
+          @media print { body { padding: 20px; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>INVOICE</h1>
+          <p>Order #${order.id.slice(0, 8).toUpperCase()}</p>
+        </div>
+        
+        <div class="invoice-info">
+          <div>
+            <h3>BILL TO</h3>
+            <p><strong>${order.profiles?.full_name || 'Guest Customer'}</strong></p>
+            <p>${order.delivery_addresses?.address_line || 'N/A'}</p>
+            <p>${order.delivery_addresses?.city || ''}</p>
+            <p>${order.delivery_addresses?.phone_number || 'N/A'}</p>
+          </div>
+          <div style="text-align: right;">
+            <h3>INVOICE DETAILS</h3>
+            <p><strong>Date:</strong> ${format(new Date(order.created_at), "MMM dd, yyyy")}</p>
+            <p><strong>Status:</strong> <span class="status">${statusConfig[order.status as keyof typeof statusConfig]?.label || order.status}</span></p>
+          </div>
+        </div>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th class="text-right">Qty</th>
+              <th class="text-right">Price</th>
+              <th class="text-right">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${order.order_items?.map(item => `
+              <tr>
+                <td>${item.product_name}</td>
+                <td class="text-right">${item.quantity}</td>
+                <td class="text-right">$${item.price.toFixed(2)}</td>
+                <td class="text-right">$${(item.price * item.quantity).toFixed(2)}</td>
+              </tr>
+            `).join('') || '<tr><td colspan="4">No items</td></tr>'}
+          </tbody>
+        </table>
+        
+        <div class="totals">
+          <div>
+            <span>Subtotal</span>
+            <span>$${itemsTotal.toFixed(2)}</span>
+          </div>
+          <div>
+            <span>Delivery Fee</span>
+            <span>$${deliveryFee.toFixed(2)}</span>
+          </div>
+          <div class="total">
+            <span>Total</span>
+            <span>$${order.total_amount.toFixed(2)}</span>
+          </div>
+        </div>
+        
+        <div class="footer">
+          <p>Thank you for your order!</p>
+          <p>Generated on ${format(new Date(), "MMMM dd, yyyy 'at' HH:mm")}</p>
+        </div>
+        
+        <script>
+          window.onload = function() {
+            window.print();
+          }
+        </script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const filterOrdersByStatus = (statuses: string[]) => {
@@ -191,10 +324,15 @@ export function AdminOrders() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => {}}>
+                        <DropdownMenuItem onClick={() => handleViewDetails(order)}>
                           <Eye className="h-4 w-4 mr-2" />
                           View Details
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handlePrintInvoice(order)}>
+                          <Printer className="h-4 w-4 mr-2" />
+                          Print Invoice
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         {order.status === "pending" && (
                           <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, "confirmed")}>
                             <CheckCircle2 className="h-4 w-4 mr-2" />
@@ -243,6 +381,149 @@ export function AdminOrders() {
 
   return (
     <div className="space-y-6">
+      {/* Order Detail Dialog */}
+      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Order #{selectedOrder?.id.slice(0, 8)}
+              {selectedOrder && (
+                <Badge 
+                  variant="outline" 
+                  className={statusConfig[selectedOrder.status as keyof typeof statusConfig]?.color || ""}
+                >
+                  {statusConfig[selectedOrder.status as keyof typeof statusConfig]?.label || selectedOrder.status}
+                </Badge>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedOrder && format(new Date(selectedOrder.created_at), "MMMM dd, yyyy 'at' HH:mm")}
+            </DialogDescription>
+          </DialogHeader>
+
+          {selectedOrder && (
+            <div className="space-y-6">
+              {/* Customer Info */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <User className="h-4 w-4" />
+                      Customer
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="font-medium">{selectedOrder.profiles?.full_name || "Guest"}</p>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <MapPin className="h-4 w-4" />
+                      Delivery Address
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-1">
+                    <p className="text-sm">{selectedOrder.delivery_addresses?.address_line || "N/A"}</p>
+                    {selectedOrder.delivery_addresses?.city && (
+                      <p className="text-sm text-muted-foreground">{selectedOrder.delivery_addresses.city}</p>
+                    )}
+                    {selectedOrder.delivery_addresses?.phone_number && (
+                      <p className="text-sm flex items-center gap-1">
+                        <Phone className="h-3 w-3" />
+                        {selectedOrder.delivery_addresses.phone_number}
+                      </p>
+                    )}
+                    {selectedOrder.delivery_addresses?.map_link && (
+                      <a 
+                        href={selectedOrder.delivery_addresses.map_link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        View on Map
+                      </a>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Order Items */}
+              <div>
+                <h4 className="font-semibold mb-3">Order Items</h4>
+                <div className="space-y-3">
+                  {selectedOrder.order_items?.map((item) => (
+                    <div key={item.id} className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg">
+                      {item.image_url && (
+                        <img 
+                          src={item.image_url} 
+                          alt={item.product_name}
+                          className="w-16 h-16 object-cover rounded-md"
+                        />
+                      )}
+                      <div className="flex-1">
+                        <p className="font-medium">{item.product_name}</p>
+                        <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                      </div>
+                      <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                    </div>
+                  ))}
+                  {(!selectedOrder.order_items || selectedOrder.order_items.length === 0) && (
+                    <p className="text-muted-foreground text-center py-4">No items in this order</p>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Order Summary */}
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span>${((selectedOrder.total_amount || 0) - (selectedOrder.delivery_fee || 5)).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Delivery Fee</span>
+                  <span>${(selectedOrder.delivery_fee || 5).toFixed(2)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span>${selectedOrder.total_amount.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => handlePrintInvoice(selectedOrder)}>
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Invoice
+                </Button>
+                {selectedOrder.status === "pending" && (
+                  <Button onClick={() => { handleStatusUpdate(selectedOrder.id, "confirmed"); setDetailDialogOpen(false); }}>
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                    Confirm Order
+                  </Button>
+                )}
+                {selectedOrder.status === "confirmed" && (
+                  <Button onClick={() => { handleStatusUpdate(selectedOrder.id, "shipping"); setDetailDialogOpen(false); }}>
+                    <Truck className="h-4 w-4 mr-2" />
+                    Mark as Shipping
+                  </Button>
+                )}
+                {selectedOrder.status === "shipping" && (
+                  <Button onClick={() => { handleStatusUpdate(selectedOrder.id, "delivered"); setDetailDialogOpen(false); }}>
+                    <Package className="h-4 w-4 mr-2" />
+                    Mark as Delivered
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -442,7 +723,7 @@ export function AdminOrders() {
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Return Requests</CardTitle>
-              <CardDescription>Customer return and refund requests</CardDescription>
+              <CardDescription>Orders with return requests from customers</CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
