@@ -30,6 +30,7 @@ import { AdminFAQ } from "./pages/admin/AdminFAQ";
 import { AdminContact } from "./pages/admin/AdminContact";
 import { AdminCategories } from "./pages/admin/AdminCategories";
 import { AdminOrders } from "./pages/admin/AdminOrders";
+import { AdminUsers } from "./pages/admin/AdminUsers";
 import CategoryProducts from "./pages/CategoryProducts";
 
 const queryClient = new QueryClient();
@@ -68,7 +69,7 @@ const App = () => (
               <Route path="contact" element={<AdminContact />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="orders" element={<AdminOrders />} />
-              <Route path="users" element={<div>Admin Users - Coming Soon</div>} />
+              <Route path="users" element={<AdminUsers />} />
               <Route path="admin-users" element={<div>Admin User Management - Coming Soon</div>} />
               <Route path="reports" element={<div>Admin Reports - Coming Soon</div>} />
               <Route path="settings" element={<div>Admin Settings - Coming Soon</div>} />
