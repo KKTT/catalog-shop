@@ -1,16 +1,20 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Info, Edit, Save, Users, Loader2 } from "lucide-react";
+import { Info, Edit, Save, Users, Loader2, Upload, X } from "lucide-react";
 import { useAboutContent } from "@/hooks/useAboutContent";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function AdminAbout() {
   const { aboutContent, loading, updateContent } = useAboutContent();
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     page_title: "",
     page_subtitle: "",
@@ -19,6 +23,7 @@ export function AdminAbout() {
     vision_title: "",
     vision_description: "",
     company_story: "",
+    story_image_url: "",
     core_values: "",
     team_size: "",
     years_experience: "",
@@ -35,6 +40,7 @@ export function AdminAbout() {
         vision_title: aboutContent.vision_title || "",
         vision_description: aboutContent.vision_description || "",
         company_story: aboutContent.company_story || "",
+        story_image_url: aboutContent.story_image_url || "",
         core_values: aboutContent.core_values?.join(", ") || "",
         team_size: aboutContent.team_size?.toString() || "",
         years_experience: aboutContent.years_experience?.toString() || "",
@@ -42,6 +48,45 @@ export function AdminAbout() {
       });
     }
   }, [aboutContent]);
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const fileName = `story-${Date.now()}.${fileExt}`;
+      const filePath = `about/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("image")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("image")
+        .getPublicUrl(filePath);
+
+      setFormData({ ...formData, story_image_url: publicUrl });
+      toast.success("Image uploaded successfully");
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData({ ...formData, story_image_url: "" });
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -53,6 +98,7 @@ export function AdminAbout() {
       vision_title: formData.vision_title || null,
       vision_description: formData.vision_description || null,
       company_story: formData.company_story || null,
+      story_image_url: formData.story_image_url || null,
       core_values: formData.core_values ? formData.core_values.split(",").map((v) => v.trim()) : null,
       team_size: formData.team_size ? parseInt(formData.team_size) : null,
       years_experience: formData.years_experience ? parseInt(formData.years_experience) : null,
@@ -192,6 +238,56 @@ export function AdminAbout() {
                 rows={5}
                 placeholder="Tell your company's story..."
               />
+            </div>
+            <div>
+              <Label>Story Image</Label>
+              <div className="mt-2 space-y-3">
+                {formData.story_image_url ? (
+                  <div className="relative inline-block">
+                    <img
+                      src={formData.story_image_url}
+                      alt="Story"
+                      className="h-40 w-auto rounded-lg object-cover border"
+                    />
+                    {isEditing && (
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        className="absolute -top-2 -right-2 h-6 w-6"
+                        onClick={handleRemoveImage}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="h-40 w-60 rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
+                    <span className="text-muted-foreground text-sm">No image</span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!isEditing || uploading}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="h-4 w-4 mr-2" />
+                  )}
+                  {uploading ? "Uploading..." : "Choose File"}
+                </Button>
+              </div>
             </div>
             <div>
               <Label htmlFor="core_values">Core Values (comma-separated)</Label>
