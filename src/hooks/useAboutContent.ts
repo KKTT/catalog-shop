@@ -11,6 +11,7 @@ export interface AboutContent {
   vision_title: string | null;
   vision_description: string | null;
   company_story: string | null;
+  story_image_url: string | null;
   core_values: string[] | null;
   team_size: number | null;
   years_experience: number | null;

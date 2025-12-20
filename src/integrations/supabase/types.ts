@@ -181,6 +181,7 @@ export type Database = {
           page_subtitle: string | null
           page_title: string | null
           products_available: number | null
+          story_image_url: string | null
           team_size: number | null
           updated_at: string | null
           vision_description: string | null
@@ -200,6 +201,7 @@ export type Database = {
           page_subtitle?: string | null
           page_title?: string | null
           products_available?: number | null
+          story_image_url?: string | null
           team_size?: number | null
           updated_at?: string | null
           vision_description?: string | null
@@ -219,6 +221,7 @@ export type Database = {
           page_subtitle?: string | null
           page_title?: string | null
           products_available?: number | null
+          story_image_url?: string | null
           team_size?: number | null
           updated_at?: string | null
           vision_description?: string | null
