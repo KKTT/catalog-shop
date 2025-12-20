@@ -178,9 +178,13 @@ export type Database = {
           is_active: boolean | null
           mission_description: string | null
           mission_title: string | null
+          page_subtitle: string | null
+          page_title: string | null
           products_available: number | null
           team_size: number | null
           updated_at: string | null
+          vision_description: string | null
+          vision_title: string | null
           years_experience: number | null
         }
         Insert: {
@@ -193,9 +197,13 @@ export type Database = {
           is_active?: boolean | null
           mission_description?: string | null
           mission_title?: string | null
+          page_subtitle?: string | null
+          page_title?: string | null
           products_available?: number | null
           team_size?: number | null
           updated_at?: string | null
+          vision_description?: string | null
+          vision_title?: string | null
           years_experience?: number | null
         }
         Update: {
@@ -208,9 +216,13 @@ export type Database = {
           is_active?: boolean | null
           mission_description?: string | null
           mission_title?: string | null
+          page_subtitle?: string | null
+          page_title?: string | null
           products_available?: number | null
           team_size?: number | null
           updated_at?: string | null
+          vision_description?: string | null
+          vision_title?: string | null
           years_experience?: number | null
         }
         Relationships: []

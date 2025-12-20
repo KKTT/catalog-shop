@@ -1,29 +1,76 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Info, Edit, Save, Users } from "lucide-react";
+import { Info, Edit, Save, Users, Loader2 } from "lucide-react";
+import { useAboutContent } from "@/hooks/useAboutContent";
 
 export function AdminAbout() {
+  const { aboutContent, loading, updateContent } = useAboutContent();
   const [isEditing, setIsEditing] = useState(false);
-  const [aboutData, setAboutData] = useState({
-    title: "About Our Company",
-    subtitle: "Building the future of e-commerce",
-    mission: "Our mission is to provide exceptional products and unparalleled customer service.",
-    vision: "To be the leading online marketplace trusted by millions worldwide.",
-    story: "Founded in 2020, we started with a simple idea: make online shopping better for everyone.",
-    values: "Quality, Innovation, Customer Focus, Integrity",
-    teamSize: "50+",
-    yearsExperience: "4",
-    customersServed: "10,000+"
+  const [saving, setSaving] = useState(false);
+  const [formData, setFormData] = useState({
+    page_title: "",
+    page_subtitle: "",
+    mission_title: "",
+    mission_description: "",
+    vision_title: "",
+    vision_description: "",
+    company_story: "",
+    core_values: "",
+    team_size: "",
+    years_experience: "",
+    happy_customers: "",
   });
 
-  const handleSave = () => {
-    // Here you would save to your backend
-    setIsEditing(false);
+  useEffect(() => {
+    if (aboutContent) {
+      setFormData({
+        page_title: aboutContent.page_title || "",
+        page_subtitle: aboutContent.page_subtitle || "",
+        mission_title: aboutContent.mission_title || "",
+        mission_description: aboutContent.mission_description || "",
+        vision_title: aboutContent.vision_title || "",
+        vision_description: aboutContent.vision_description || "",
+        company_story: aboutContent.company_story || "",
+        core_values: aboutContent.core_values?.join(", ") || "",
+        team_size: aboutContent.team_size?.toString() || "",
+        years_experience: aboutContent.years_experience?.toString() || "",
+        happy_customers: aboutContent.happy_customers?.toString() || "",
+      });
+    }
+  }, [aboutContent]);
+
+  const handleSave = async () => {
+    setSaving(true);
+    const success = await updateContent({
+      page_title: formData.page_title || null,
+      page_subtitle: formData.page_subtitle || null,
+      mission_title: formData.mission_title || null,
+      mission_description: formData.mission_description || null,
+      vision_title: formData.vision_title || null,
+      vision_description: formData.vision_description || null,
+      company_story: formData.company_story || null,
+      core_values: formData.core_values ? formData.core_values.split(",").map((v) => v.trim()) : null,
+      team_size: formData.team_size ? parseInt(formData.team_size) : null,
+      years_experience: formData.years_experience ? parseInt(formData.years_experience) : null,
+      happy_customers: formData.happy_customers ? parseInt(formData.happy_customers) : null,
+    });
+    setSaving(false);
+    if (success) {
+      setIsEditing(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -32,12 +79,19 @@ export function AdminAbout() {
           <h1 className="text-3xl font-bold tracking-tight">About Page Management</h1>
           <p className="text-muted-foreground">Manage your company's story and information</p>
         </div>
-        <Button 
-          onClick={() => isEditing ? handleSave() : setIsEditing(true)}
+        <Button
+          onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
           variant={isEditing ? "default" : "outline"}
+          disabled={saving}
         >
-          {isEditing ? <Save className="h-4 w-4 mr-2" /> : <Edit className="h-4 w-4 mr-2" />}
-          {isEditing ? "Save Changes" : "Edit Content"}
+          {saving ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : isEditing ? (
+            <Save className="h-4 w-4 mr-2" />
+          ) : (
+            <Edit className="h-4 w-4 mr-2" />
+          )}
+          {saving ? "Saving..." : isEditing ? "Save Changes" : "Edit Content"}
         </Button>
       </div>
 
@@ -52,39 +106,68 @@ export function AdminAbout() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="title">Page Title</Label>
+              <Label htmlFor="page_title">Page Title</Label>
               <Input
-                id="title"
-                value={aboutData.title}
-                onChange={(e) => setAboutData({...aboutData, title: e.target.value})}
+                id="page_title"
+                value={formData.page_title}
+                onChange={(e) => setFormData({ ...formData, page_title: e.target.value })}
                 disabled={!isEditing}
+                placeholder="About Our Company"
               />
             </div>
             <div>
-              <Label htmlFor="subtitle">Subtitle</Label>
-              <Input
-                id="subtitle"
-                value={aboutData.subtitle}
-                onChange={(e) => setAboutData({...aboutData, subtitle: e.target.value})}
-                disabled={!isEditing}
-              />
-            </div>
-            <div>
-              <Label htmlFor="mission">Mission Statement</Label>
+              <Label htmlFor="page_subtitle">Page Subtitle</Label>
               <Textarea
-                id="mission"
-                value={aboutData.mission}
-                onChange={(e) => setAboutData({...aboutData, mission: e.target.value})}
+                id="page_subtitle"
+                value={formData.page_subtitle}
+                onChange={(e) => setFormData({ ...formData, page_subtitle: e.target.value })}
                 disabled={!isEditing}
+                placeholder="Enter a subtitle for the about page"
+                rows={2}
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="mission_title">Mission Title</Label>
+                <Input
+                  id="mission_title"
+                  value={formData.mission_title}
+                  onChange={(e) => setFormData({ ...formData, mission_title: e.target.value })}
+                  disabled={!isEditing}
+                  placeholder="Our Mission"
+                />
+              </div>
+              <div>
+                <Label htmlFor="vision_title">Vision Title</Label>
+                <Input
+                  id="vision_title"
+                  value={formData.vision_title}
+                  onChange={(e) => setFormData({ ...formData, vision_title: e.target.value })}
+                  disabled={!isEditing}
+                  placeholder="Our Vision"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="mission_description">Mission Statement</Label>
+              <Textarea
+                id="mission_description"
+                value={formData.mission_description}
+                onChange={(e) => setFormData({ ...formData, mission_description: e.target.value })}
+                disabled={!isEditing}
+                placeholder="Enter your company's mission statement"
+                rows={3}
               />
             </div>
             <div>
-              <Label htmlFor="vision">Vision Statement</Label>
+              <Label htmlFor="vision_description">Vision Statement</Label>
               <Textarea
-                id="vision"
-                value={aboutData.vision}
-                onChange={(e) => setAboutData({...aboutData, vision: e.target.value})}
+                id="vision_description"
+                value={formData.vision_description}
+                onChange={(e) => setFormData({ ...formData, vision_description: e.target.value })}
                 disabled={!isEditing}
+                placeholder="Enter your company's vision statement"
+                rows={3}
               />
             </div>
           </CardContent>
@@ -100,50 +183,58 @@ export function AdminAbout() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="story">Company Story</Label>
+              <Label htmlFor="company_story">Company Story</Label>
               <Textarea
-                id="story"
-                value={aboutData.story}
-                onChange={(e) => setAboutData({...aboutData, story: e.target.value})}
+                id="company_story"
+                value={formData.company_story}
+                onChange={(e) => setFormData({ ...formData, company_story: e.target.value })}
                 disabled={!isEditing}
-                rows={4}
+                rows={5}
+                placeholder="Tell your company's story..."
               />
             </div>
             <div>
-              <Label htmlFor="values">Core Values</Label>
+              <Label htmlFor="core_values">Core Values (comma-separated)</Label>
               <Input
-                id="values"
-                value={aboutData.values}
-                onChange={(e) => setAboutData({...aboutData, values: e.target.value})}
+                id="core_values"
+                value={formData.core_values}
+                onChange={(e) => setFormData({ ...formData, core_values: e.target.value })}
                 disabled={!isEditing}
+                placeholder="Quality, Innovation, Customer Focus, Integrity"
               />
             </div>
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="team-size">Team Size</Label>
+                <Label htmlFor="team_size">Team Size</Label>
                 <Input
-                  id="team-size"
-                  value={aboutData.teamSize}
-                  onChange={(e) => setAboutData({...aboutData, teamSize: e.target.value})}
+                  id="team_size"
+                  type="number"
+                  value={formData.team_size}
+                  onChange={(e) => setFormData({ ...formData, team_size: e.target.value })}
                   disabled={!isEditing}
+                  placeholder="50"
                 />
               </div>
               <div>
-                <Label htmlFor="years">Years Experience</Label>
+                <Label htmlFor="years_experience">Years Experience</Label>
                 <Input
-                  id="years"
-                  value={aboutData.yearsExperience}
-                  onChange={(e) => setAboutData({...aboutData, yearsExperience: e.target.value})}
+                  id="years_experience"
+                  type="number"
+                  value={formData.years_experience}
+                  onChange={(e) => setFormData({ ...formData, years_experience: e.target.value })}
                   disabled={!isEditing}
+                  placeholder="15"
                 />
               </div>
               <div>
-                <Label htmlFor="customers">Customers Served</Label>
+                <Label htmlFor="happy_customers">Happy Customers</Label>
                 <Input
-                  id="customers"
-                  value={aboutData.customersServed}
-                  onChange={(e) => setAboutData({...aboutData, customersServed: e.target.value})}
+                  id="happy_customers"
+                  type="number"
+                  value={formData.happy_customers}
+                  onChange={(e) => setFormData({ ...formData, happy_customers: e.target.value })}
                   disabled={!isEditing}
+                  placeholder="50000"
                 />
               </div>
             </div>
