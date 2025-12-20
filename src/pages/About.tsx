@@ -3,9 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useAboutContent } from "@/hooks/useAboutContent";
+import { useLeadershipTeam } from "@/hooks/useLeadershipTeam";
+import { useAwards } from "@/hooks/useAwards";
 
 const About = () => {
   const { aboutContent, loading } = useAboutContent();
+  const { members, loading: loadingTeam } = useLeadershipTeam();
+  const { awards, loading: loadingAwards } = useAwards();
 
   if (loading) {
     return (
@@ -19,19 +23,19 @@ const About = () => {
     );
   }
 
-  const pageTitle = aboutContent?.page_title || "About Than Thorn and Tep Sarak";
+  const pageTitle = aboutContent?.page_title || "About Us";
   const pageSubtitle = aboutContent?.page_subtitle || 
-    "For over 15 years, we've been crafting premium outdoor gear that enhances your adventures. Our commitment to quality, innovation, and customer satisfaction drives everything we do.";
+    "For over 15 years, we've been crafting premium outdoor gear that enhances your adventures.";
   const companyStory = aboutContent?.company_story || 
-    "Founded in 2008, Than Thorn and Tep Sarak began as a small family business with a simple mission: to create outdoor gear that could withstand the toughest conditions while providing unmatched reliability. What started as a passion project has grown into a trusted brand known for innovative designs and superior craftsmanship. Our products are used by outdoor enthusiasts, professionals, and families around the world. Today, we continue to push the boundaries of what's possible in outdoor gear, always staying true to our core values of quality, durability, and customer satisfaction.";
+    "Founded with a simple mission: to create products that could withstand the toughest conditions while providing unmatched reliability.";
+  const storyImageUrl = aboutContent?.story_image_url;
   const missionTitle = aboutContent?.mission_title || "Our Mission";
   const missionDescription = aboutContent?.mission_description || 
-    "To design and manufacture the highest quality outdoor gear that enables people to explore, adventure, and connect with nature safely and comfortably. We strive to exceed expectations through innovation, sustainability, and exceptional customer service.";
+    "To design and manufacture the highest quality products that enable people to explore and adventure safely.";
   const visionTitle = aboutContent?.vision_title || "Our Vision";
   const visionDescription = aboutContent?.vision_description || 
-    "To be the world's most trusted outdoor gear brand, known for products that enhance outdoor experiences while promoting environmental stewardship and inspiring the next generation of outdoor enthusiasts.";
+    "To be the world's most trusted brand, known for products that enhance experiences while promoting sustainability.";
   const coreValues = aboutContent?.core_values || ["Quality", "Innovation", "Sustainability", "Customer Focus"];
-  const yearsExperience = aboutContent?.years_experience || 15;
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,9 +63,9 @@ const About = () => {
             </div>
             <div className="relative">
               <img 
-                src="/placeholder.svg?height=400&width=600" 
+                src={storyImageUrl || "/placeholder.svg?height=400&width=600"} 
                 alt="Our Story"
-                className="rounded-lg shadow-lg"
+                className="rounded-lg shadow-lg w-full h-auto object-cover"
               />
             </div>
           </div>
@@ -101,70 +105,67 @@ const About = () => {
         </section>
 
         {/* Values */}
-        <section className="py-16">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Our Values</h2>
-            <p className="text-xl text-muted-foreground">The principles that guide everything we do</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {coreValues.slice(0, 4).map((value, index) => {
-              const icons = [Award, Users, Heart, Target];
-              const Icon = icons[index % icons.length];
-              return (
-                <div key={index} className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
-                    <Icon className="h-8 w-8 text-brand-gold" />
+        {coreValues.length > 0 && (
+          <section className="py-16">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl font-bold mb-4">Our Values</h2>
+              <p className="text-xl text-muted-foreground">The principles that guide everything we do</p>
+            </div>
+            
+            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(coreValues.length, 4)} gap-8`}>
+              {coreValues.map((value, index) => {
+                const icons = [Award, Users, Heart, Target];
+                const Icon = icons[index % icons.length];
+                return (
+                  <div key={index} className="text-center space-y-4">
+                    <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mx-auto">
+                      <Icon className="h-8 w-8 text-brand-gold" />
+                    </div>
+                    <h3 className="text-xl font-semibold">{value}</h3>
                   </div>
-                  <h3 className="text-xl font-semibold">{value}</h3>
-                </div>
-              );
-            })}
-          </div>
-        </section>
+                );
+              })}
+            </div>
+          </section>
+        )}
 
-        {/* Team */}
+        {/* Leadership Team */}
         <section className="py-16">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Leadership Team</h2>
             <p className="text-xl text-muted-foreground">Meet the people behind our success</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Than Thorn",
-                role: "Co-Founder & CEO",
-                image: "/placeholder.svg?height=300&width=300",
-                bio: `With over ${yearsExperience} years in outdoor gear design, Than leads our vision and product development.`
-              },
-              {
-                name: "Tep Sarak",
-                role: "Co-Founder & CTO",
-                image: "/placeholder.svg?height=300&width=300",
-                bio: "Sarak oversees our technical innovations and manufacturing processes."
-              },
-              {
-                name: "Sarah Johnson",
-                role: "Head of Design",
-                image: "/placeholder.svg?height=300&width=300",
-                bio: "Sarah brings creative vision to our product line, ensuring both function and style."
-              }
-            ].map((member, index) => (
-              <Card key={index} className="text-center">
-                <CardContent className="p-6">
-                  <img 
-                    src={member.image} 
-                    alt={member.name}
-                    className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
-                  />
-                  <h3 className="text-xl font-semibold mb-2">{member.name}</h3>
-                  <p className="text-brand-gold font-medium mb-3">{member.role}</p>
-                  <p className="text-muted-foreground">{member.bio}</p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {loadingTeam ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+          ) : members.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {members.map((member) => (
+                <Card key={member.id} className="text-center">
+                  <CardContent className="p-6">
+                    {member.image_url ? (
+                      <img 
+                        src={member.image_url} 
+                        alt={member.name}
+                        className="w-32 h-32 rounded-full mx-auto mb-4 object-cover"
+                      />
+                    ) : (
+                      <div className="w-32 h-32 rounded-full mx-auto mb-4 bg-muted flex items-center justify-center">
+                        <Users className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    )}
+                    <h3 className="text-xl font-semibold mb-2">{member.name}</h3>
+                    <p className="text-brand-gold font-medium mb-3">{member.position}</p>
+                    {member.bio && <p className="text-muted-foreground">{member.bio}</p>}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-muted-foreground py-8">Leadership team information coming soon.</p>
+          )}
         </section>
 
         {/* Awards & Recognition */}
@@ -174,24 +175,36 @@ const About = () => {
             <p className="text-xl text-gray-300">Recognition for our commitment to excellence</p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-brand-gold mb-2">2023</h3>
-              <p>Best Outdoor Gear Brand</p>
+          {loadingAwards ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-8 w-8 animate-spin text-white" />
             </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-brand-gold mb-2">2022</h3>
-              <p>Innovation Award</p>
+          ) : awards.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {awards.map((award) => (
+                <div key={award.id} className="text-center">
+                  {award.image_url ? (
+                    <img 
+                      src={award.image_url} 
+                      alt={award.title}
+                      className="w-16 h-16 mx-auto mb-3 object-contain"
+                    />
+                  ) : (
+                    <Award className="w-12 h-12 mx-auto mb-3 text-brand-gold" />
+                  )}
+                  {award.year && (
+                    <h3 className="text-2xl font-bold text-brand-gold mb-2">{award.year}</h3>
+                  )}
+                  <p className="font-semibold">{award.title}</p>
+                  {award.organization && (
+                    <p className="text-sm text-gray-300 mt-1">{award.organization}</p>
+                  )}
+                </div>
+              ))}
             </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-brand-gold mb-2">2021</h3>
-              <p>Customer Choice Award</p>
-            </div>
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-brand-gold mb-2">2020</h3>
-              <p>Sustainability Leader</p>
-            </div>
-          </div>
+          ) : (
+            <p className="text-center text-gray-300 py-8">Awards and recognition coming soon.</p>
+          )}
         </section>
       </div>
 
