@@ -309,12 +309,7 @@ export function AdminProducts() {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <div className="flex items-center justify-between">
-                          <FormLabel>Category *</FormLabel>
-                          <a href="/admin/categories" className="text-xs text-primary hover:underline">
-                            Manage Categories
-                          </a>
-                        </div>
+                        <FormLabel>Category *</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
