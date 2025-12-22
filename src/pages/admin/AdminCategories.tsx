@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, Upload, Eye, EyeOff } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,13 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Category name is required"),
-  image_url: z.string().optional(),
-  link_url: z.string().optional(),
-  sort_order: z.number().min(0, "Sort order must be 0 or greater"),
-});
-
-const insertSchema = categorySchema.extend({
-  name: z.string().min(1, "Category name is required"), // Making it required for insert
+  description: z.string().optional(),
 });
 
 type CategoryForm = z.infer<typeof categorySchema>;
@@ -29,9 +24,7 @@ type CategoryForm = z.infer<typeof categorySchema>;
 interface Category {
   id: string;
   name: string;
-  image_url?: string;
-  link_url?: string;
-  sort_order: number;
+  description?: string;
   is_active: boolean;
   created_at: string;
 }
@@ -47,18 +40,16 @@ export const AdminCategories = () => {
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
-      image_url: "",
-      link_url: "",
-      sort_order: 0,
+      description: "",
     },
   });
 
   const loadCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('homepage_categories')
+        .from('categories')
         .select('*')
-        .order('sort_order');
+        .order('name');
 
       if (error) throw error;
       setCategories(data || []);
@@ -82,8 +73,11 @@ export const AdminCategories = () => {
     try {
       if (editingCategory) {
         const { error } = await supabase
-          .from('homepage_categories')
-          .update(data)
+          .from('categories')
+          .update({
+            name: data.name,
+            description: data.description || null,
+          })
           .eq('id', editingCategory.id);
 
         if (error) throw error;
@@ -92,17 +86,12 @@ export const AdminCategories = () => {
           description: "Category updated successfully",
         });
       } else {
-        // Ensure name is provided for new categories
-        const insertData = {
-          name: data.name || "",
-          image_url: data.image_url || null,
-          link_url: data.link_url || null,
-          sort_order: data.sort_order || 0,
-        };
-        
         const { error } = await supabase
-          .from('homepage_categories')
-          .insert(insertData);
+          .from('categories')
+          .insert({
+            name: data.name,
+            description: data.description || null,
+          });
 
         if (error) throw error;
         toast({
@@ -128,9 +117,7 @@ export const AdminCategories = () => {
   const handleEdit = (category: Category) => {
     setEditingCategory(category);
     form.setValue('name', category.name);
-    form.setValue('image_url', category.image_url || '');
-    form.setValue('link_url', category.link_url || '');
-    form.setValue('sort_order', category.sort_order);
+    form.setValue('description', category.description || '');
     setIsOpen(true);
   };
 
@@ -139,7 +126,7 @@ export const AdminCategories = () => {
 
     try {
       const { error } = await supabase
-        .from('homepage_categories')
+        .from('categories')
         .delete()
         .eq('id', id);
 
@@ -162,7 +149,7 @@ export const AdminCategories = () => {
   const toggleActive = async (id: string, currentStatus: boolean) => {
     try {
       const { error } = await supabase
-        .from('homepage_categories')
+        .from('categories')
         .update({ is_active: !currentStatus })
         .eq('id', id);
 
@@ -177,40 +164,6 @@ export const AdminCategories = () => {
       toast({
         title: "Error",
         description: "Failed to update category status",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random()}.${fileExt}`;
-      const filePath = `categories/${fileName}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('image')
-        .upload(filePath, file);
-
-      if (uploadError) throw uploadError;
-
-      const { data } = supabase.storage
-        .from('image')
-        .getPublicUrl(filePath);
-
-      form.setValue('image_url', data.publicUrl);
-      toast({
-        title: "Success",
-        description: "Image uploaded successfully",
-      });
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload image",
         variant: "destructive",
       });
     }
@@ -234,8 +187,8 @@ export const AdminCategories = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Category Management</h1>
-          <p className="text-muted-foreground">Manage homepage categories and their display</p>
+          <h1 className="text-2xl font-bold">Product Categories</h1>
+          <p className="text-muted-foreground">Manage product categories for your store</p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
@@ -268,70 +221,14 @@ export const AdminCategories = () => {
 
                 <FormField
                   control={form.control}
-                  name="image_url"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Image</FormLabel>
-                      <div className="space-y-2">
-                        <FormControl>
-                          <Input placeholder="Image URL" {...field} />
-                        </FormControl>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                            className="hidden"
-                            id="image-upload"
-                          />
-                          <label htmlFor="image-upload">
-                            <Button type="button" variant="outline" size="sm" asChild>
-                              <span>
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload
-                              </span>
-                            </Button>
-                          </label>
-                        </div>
-                        {field.value && (
-                          <img 
-                            src={field.value} 
-                            alt="Preview" 
-                            className="w-full h-32 object-cover rounded border"
-                          />
-                        )}
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="link_url"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Link URL</FormLabel>
+                      <FormLabel>Description</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., /products/soft-cooler" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sort_order"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sort Order</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="0" 
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                        <Textarea 
+                          placeholder="Brief description of this category" 
+                          {...field} 
                         />
                       </FormControl>
                       <FormMessage />
@@ -361,10 +258,8 @@ export const AdminCategories = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Image</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead>Link</TableHead>
-                <TableHead>Order</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
@@ -372,24 +267,10 @@ export const AdminCategories = () => {
             <TableBody>
               {categories.map((category) => (
                 <TableRow key={category.id}>
-                  <TableCell>
-                    {category.image_url ? (
-                      <img 
-                        src={category.image_url} 
-                        alt={category.name}
-                        className="w-12 h-12 object-cover rounded"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
-                        <span className="text-xs text-gray-500">No image</span>
-                      </div>
-                    )}
-                  </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell className="text-sm text-muted-foreground">
-                    {category.link_url || 'No link'}
+                    {category.description || 'No description'}
                   </TableCell>
-                  <TableCell>{category.sort_order}</TableCell>
                   <TableCell>
                     <Badge variant={category.is_active ? "default" : "secondary"}>
                       {category.is_active ? 'Active' : 'Inactive'}
