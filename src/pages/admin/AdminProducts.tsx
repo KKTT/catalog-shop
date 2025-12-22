@@ -309,7 +309,12 @@ export function AdminProducts() {
                     name="category"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Category *</FormLabel>
+                        <div className="flex items-center justify-between">
+                          <FormLabel>Category *</FormLabel>
+                          <a href="/admin/categories" className="text-xs text-primary hover:underline">
+                            Manage Categories
+                          </a>
+                        </div>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
@@ -328,11 +333,6 @@ export function AdminProducts() {
                             )}
                           </SelectContent>
                         </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          <a href="/admin/categories" className="text-primary hover:underline">
-                            Manage Categories
-                          </a>
-                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
