@@ -285,18 +285,18 @@ export const useProductManager = () => {
     }
   };
 
-  // Get product categories
+  // Get product categories from categories table
   const getCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('products')
-        .select('category')
-        .not('category', 'is', null);
+        .from('categories')
+        .select('name')
+        .eq('is_active', true)
+        .order('name');
 
       if (error) throw error;
 
-      const categories = [...new Set(data.map(item => item.category))];
-      return categories.sort();
+      return data.map(item => item.name);
     } catch (error) {
       console.error('Error fetching categories:', error);
       return [];

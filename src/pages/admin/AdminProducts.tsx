@@ -317,12 +317,22 @@ export function AdminProducts() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="coolers">Coolers</SelectItem>
-                            <SelectItem value="camping">Camping</SelectItem>
-                            <SelectItem value="dry-bags">Dry Bags</SelectItem>
-                            <SelectItem value="accessories">Accessories</SelectItem>
+                            {categories.length > 0 ? (
+                              categories.map((cat) => (
+                                <SelectItem key={cat} value={cat}>
+                                  {cat}
+                                </SelectItem>
+                              ))
+                            ) : (
+                              <SelectItem value="" disabled>No categories available</SelectItem>
+                            )}
                           </SelectContent>
                         </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          <a href="/admin/categories" className="text-primary hover:underline">
+                            Manage Categories
+                          </a>
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}
