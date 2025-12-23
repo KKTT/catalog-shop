@@ -285,14 +285,14 @@ export const useProductManager = () => {
     }
   };
 
-  // Get product categories from categories table
+  // Get product categories from homepage_categories table
   const getCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from('categories')
+        .from('homepage_categories')
         .select('name')
         .eq('is_active', true)
-        .order('name');
+        .order('sort_order');
 
       if (error) throw error;
 
