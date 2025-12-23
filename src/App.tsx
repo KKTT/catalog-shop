@@ -29,6 +29,7 @@ import { AdminTestimonials } from "./pages/admin/AdminTestimonials";
 import { AdminFAQ } from "./pages/admin/AdminFAQ";
 import { AdminContact } from "./pages/admin/AdminContact";
 import { AdminCategories } from "./pages/admin/AdminCategories";
+import { AdminHomepageCategories } from "./pages/admin/AdminHomepageCategories";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminUsers } from "./pages/admin/AdminUsers";
 import CategoryProducts from "./pages/CategoryProducts";
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="faq" element={<AdminFAQ />} />
               <Route path="contact" element={<AdminContact />} />
               <Route path="categories" element={<AdminCategories />} />
+              <Route path="homepage-categories" element={<AdminHomepageCategories />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="users" element={<AdminUsers />} />
               <Route path="admin-users" element={<div>Admin User Management - Coming Soon</div>} />

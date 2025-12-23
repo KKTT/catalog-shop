@@ -21,13 +21,15 @@ import {
   UserCog,
   MessageSquare,
   FolderOpen,
+  LayoutGrid,
 } from "lucide-react";
 
 const adminItems = [
   { title: "Dashboard", url: "/admin", icon: BarChart3 },
   { title: "Home Page", url: "/admin/home", icon: Package },
+  { title: "Homepage Categories", url: "/admin/homepage-categories", icon: LayoutGrid },
   { title: "Products", url: "/admin/products", icon: Package },
-  { title: "Categories", url: "/admin/categories", icon: FolderOpen },
+  { title: "Product Categories", url: "/admin/categories", icon: FolderOpen },
   { title: "About", url: "/admin/about", icon: FileText },
   { title: "Blog", url: "/admin/blog", icon: FileText },
   { title: "Testimonials", url: "/admin/testimonials", icon: MessageSquare },

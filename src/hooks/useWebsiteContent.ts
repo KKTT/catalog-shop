@@ -38,7 +38,9 @@ export interface CompanyContent {
 export interface HomepageCategory {
   id: string;
   name: string;
-  description?: string;
+  image_url?: string;
+  link_url?: string;
+  sort_order: number;
   is_active: boolean;
 }
 
@@ -73,7 +75,7 @@ export function useWebsiteContent() {
         supabase.from('hero_content').select('*').eq('is_active', true).single(),
         supabase.from('features_content').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('company_content').select('*').eq('is_active', true).single(),
-        supabase.from('categories').select('*').eq('is_active', true).order('name'),
+        supabase.from('homepage_categories').select('*').eq('is_active', true).order('sort_order'),
         supabase.from('testimonials').select('*').eq('is_active', true).eq('is_featured', true).limit(3)
       ]);
 
@@ -148,7 +150,7 @@ export function useWebsiteContent() {
 
     try {
       const { error } = await supabase
-        .from('categories')
+        .from('homepage_categories')
         .update(data)
         .eq('id', id);
 
