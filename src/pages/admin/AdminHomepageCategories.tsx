@@ -12,12 +12,28 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const categorySchema = z.object({
   name: z.string().min(1, "Name is required"),
   image_url: z.string().optional(),
   link_url: z.string().optional(),
-  sort_order: z.coerce.number().min(0).default(0),
 });
 
 type CategoryForm = z.infer<typeof categorySchema>;
@@ -32,6 +48,85 @@ interface HomepageCategory {
   created_at: string | null;
 }
 
+interface SortableRowProps {
+  category: HomepageCategory;
+  onEdit: (category: HomepageCategory) => void;
+  onDelete: (id: string) => void;
+  onToggleActive: (id: string, currentStatus: boolean | null) => void;
+}
+
+function SortableRow({ category, onEdit, onDelete, onToggleActive }: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <TableRow ref={setNodeRef} style={style}>
+      <TableCell>
+        <button
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </button>
+      </TableCell>
+      <TableCell>
+        {category.image_url ? (
+          <img
+            src={category.image_url}
+            alt={category.name}
+            className="w-12 h-12 object-cover rounded"
+          />
+        ) : (
+          <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
+            <Image className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="font-medium">{category.name}</TableCell>
+      <TableCell className="text-muted-foreground text-sm">
+        {category.link_url || "-"}
+      </TableCell>
+      <TableCell>
+        <Switch
+          checked={category.is_active ?? false}
+          onCheckedChange={() => onToggleActive(category.id, category.is_active)}
+        />
+      </TableCell>
+      <TableCell>
+        <div className="flex gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onEdit(category)}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => onDelete(category.id)}
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </Button>
+        </div>
+      </TableCell>
+    </TableRow>
+  );
+}
+
 export function AdminHomepageCategories() {
   const [categories, setCategories] = useState<HomepageCategory[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,13 +134,19 @@ export function AdminHomepageCategories() {
   const [editingCategory, setEditingCategory] = useState<HomepageCategory | null>(null);
   const [uploading, setUploading] = useState(false);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   const form = useForm<CategoryForm>({
     resolver: zodResolver(categorySchema),
     defaultValues: {
       name: "",
       image_url: "",
       link_url: "",
-      sort_order: 0,
     },
   });
 
@@ -70,31 +171,64 @@ export function AdminHomepageCategories() {
     }
   };
 
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+      const newIndex = categories.findIndex((cat) => cat.id === over.id);
+
+      const newCategories = arrayMove(categories, oldIndex, newIndex);
+      setCategories(newCategories);
+
+      // Update sort_order in database
+      try {
+        const updates = newCategories.map((cat, index) => ({
+          id: cat.id,
+          sort_order: index,
+        }));
+
+        for (const update of updates) {
+          await supabase
+            .from("homepage_categories")
+            .update({ sort_order: update.sort_order })
+            .eq("id", update.id);
+        }
+
+        toast.success("Order updated successfully");
+      } catch (error) {
+        console.error("Error updating order:", error);
+        toast.error("Failed to update order");
+        loadCategories(); // Reload to reset order
+      }
+    }
+  };
+
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
+      const fileExt = file.name.split(".").pop();
       const fileName = `${Date.now()}.${fileExt}`;
       const filePath = `homepage-categories/${fileName}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('image')
+        .from("image")
         .upload(filePath, file);
 
       if (uploadError) throw uploadError;
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('image')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from("image").getPublicUrl(filePath);
 
-      form.setValue('image_url', publicUrl);
-      toast.success('Image uploaded successfully');
+      form.setValue("image_url", publicUrl);
+      toast.success("Image uploaded successfully");
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Failed to upload image');
+      console.error("Error uploading image:", error);
+      toast.error("Failed to upload image");
     } finally {
       setUploading(false);
     }
@@ -109,22 +243,24 @@ export function AdminHomepageCategories() {
             name: data.name,
             image_url: data.image_url || null,
             link_url: data.link_url || null,
-            sort_order: data.sort_order,
           })
           .eq("id", editingCategory.id);
 
         if (error) throw error;
         toast.success("Category updated successfully");
       } else {
-        const { error } = await supabase
-          .from("homepage_categories")
-          .insert({
-            name: data.name,
-            image_url: data.image_url || null,
-            link_url: data.link_url || null,
-            sort_order: data.sort_order,
-            is_active: true,
-          });
+        // Get the max sort_order
+        const maxOrder = categories.length > 0
+          ? Math.max(...categories.map((c) => c.sort_order || 0))
+          : -1;
+
+        const { error } = await supabase.from("homepage_categories").insert({
+          name: data.name,
+          image_url: data.image_url || null,
+          link_url: data.link_url || null,
+          sort_order: maxOrder + 1,
+          is_active: true,
+        });
 
         if (error) throw error;
         toast.success("Category created successfully");
@@ -144,7 +280,6 @@ export function AdminHomepageCategories() {
       name: category.name,
       image_url: category.image_url || "",
       link_url: category.link_url || "",
-      sort_order: category.sort_order || 0,
     });
     setIsOpen(true);
   };
@@ -188,7 +323,6 @@ export function AdminHomepageCategories() {
       name: "",
       image_url: "",
       link_url: "",
-      sort_order: 0,
     });
     setEditingCategory(null);
     setIsOpen(false);
@@ -208,7 +342,7 @@ export function AdminHomepageCategories() {
         <div>
           <h1 className="text-3xl font-bold">Homepage Categories</h1>
           <p className="text-muted-foreground mt-1">
-            Manage categories displayed in the "Shop by Category" section on the homepage
+            Manage categories displayed in the "Shop by Category" section. Drag to reorder.
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -248,9 +382,9 @@ export function AdminHomepageCategories() {
                       <FormLabel>Image</FormLabel>
                       <div className="space-y-2">
                         {field.value && (
-                          <img 
-                            src={field.value} 
-                            alt="Preview" 
+                          <img
+                            src={field.value}
+                            alt="Preview"
                             className="w-full h-32 object-cover rounded-md border"
                           />
                         )}
@@ -266,7 +400,13 @@ export function AdminHomepageCategories() {
                               onChange={handleImageUpload}
                               disabled={uploading}
                             />
-                            <Button type="button" variant="outline" size="icon" disabled={uploading} asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="icon"
+                              disabled={uploading}
+                              asChild
+                            >
                               <span>
                                 <Image className="h-4 w-4" />
                               </span>
@@ -290,20 +430,6 @@ export function AdminHomepageCategories() {
                           <LinkIcon className="h-4 w-4 mt-3 text-muted-foreground" />
                           <Input placeholder="/products/category-name" {...field} />
                         </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="sort_order"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sort Order</FormLabel>
-                      <FormControl>
-                        <Input type="number" min={0} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -334,71 +460,40 @@ export function AdminHomepageCategories() {
               No homepage categories yet. Add one to get started.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-12">Order</TableHead>
-                  <TableHead className="w-20">Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Link</TableHead>
-                  <TableHead className="w-24">Status</TableHead>
-                  <TableHead className="w-24">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <GripVertical className="h-4 w-4" />
-                        {category.sort_order}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {category.image_url ? (
-                        <img 
-                          src={category.image_url} 
-                          alt={category.name}
-                          className="w-12 h-12 object-cover rounded"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                          <Image className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {category.link_url || "-"}
-                    </TableCell>
-                    <TableCell>
-                      <Switch
-                        checked={category.is_active ?? false}
-                        onCheckedChange={() => toggleActive(category.id, category.is_active)}
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(category)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(category.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </TableCell>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-12"></TableHead>
+                    <TableHead className="w-20">Image</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Link</TableHead>
+                    <TableHead className="w-24">Status</TableHead>
+                    <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  <SortableContext
+                    items={categories.map((c) => c.id)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    {categories.map((category) => (
+                      <SortableRow
+                        key={category.id}
+                        category={category}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        onToggleActive={toggleActive}
+                      />
+                    ))}
+                  </SortableContext>
+                </TableBody>
+              </Table>
+            </DndContext>
           )}
         </CardContent>
       </Card>
