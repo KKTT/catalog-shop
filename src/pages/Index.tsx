@@ -261,19 +261,14 @@ const Index = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {(websiteCategories.length > 0 ? websiteCategories : [
-              { id: '1', name: "Soft Coolers", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/soft-cooler", sort_order: 1, is_active: true },
-              { id: '2', name: "Welded Coolers", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/welded-cooler", sort_order: 2, is_active: true },
-              { id: '3', name: "Camping Gear", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/camping", sort_order: 3, is_active: true },
-              { id: '4', name: "Travel & Hunting", image_url: "/placeholder.svg?height=300&width=300", link_url: "/products/travel", sort_order: 4, is_active: true }
+              { id: '1', name: "Soft Coolers", is_active: true },
+              { id: '2', name: "Welded Coolers", is_active: true },
+              { id: '3', name: "Camping Gear", is_active: true },
+              { id: '4', name: "Travel & Hunting", is_active: true }
             ]).map((category) => (
-              <Link key={category.id} to={category.link_url || '#'} className="group">
+              <Link key={category.id} to={`/category/${encodeURIComponent(category.name)}`} className="group">
                 <Card className="overflow-hidden hover:shadow-lg transition-all duration-300 border-2 hover:border-brand-gold/20">
-                  <div className="relative">
-                    <img 
-                      src={category.image_url || "/placeholder.svg?height=300&width=300"} 
-                      alt={category.name}
-                      className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+                  <div className="relative h-48 bg-gradient-to-br from-brand-dark to-brand-accent flex items-center justify-center">
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
                     <div className="absolute bottom-4 left-4">
                       <h3 className="text-xl font-bold text-white">{category.name}</h3>
